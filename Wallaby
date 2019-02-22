@@ -1,0 +1,41 @@
+#include <kipr/botball.h>
+/*
+mini servo - 644 = up
+mini servo - 1713 = down
+mini servo - 763 = collection position
+port 0 = right motor
+port 1 = left motor
+
+*/
+#define claw_down 1529
+#define claw_up 42
+#define claw_open 1000
+#define claw_close 200
+int main()
+{
+    enable_servos();
+    int i;
+    set_servo_position(2, 877);
+    msleep(500);
+    set_servo_position(0, claw_open);
+    msleep(500);
+    set_servo_position(1, claw_down);
+    msleep(1000);
+    set_servo_position(0, claw_close);
+    msleep(1500);
+    set_servo_position(1, claw_up);
+    msleep(1500);
+    set_servo_position(0, 800);
+    msleep(500);
+    set_servo_position(1, claw_down);
+    msleep(500);
+    while(i < 5){
+        set_servo_position(2, 1713);
+        msleep(1000);
+        set_servo_position(2, 644);
+        msleep(1000);
+        i++;
+    }
+    disable_servos();
+    return 0;
+}

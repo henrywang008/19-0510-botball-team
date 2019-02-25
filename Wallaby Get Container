@@ -3,6 +3,7 @@
 /*
 port 0 = right motor
 port 1 = left motor
+
 */
 #define miniservo_up 644
 #define miniservo_down 1713
@@ -11,6 +12,9 @@ port 1 = left motor
 #define claw_up 42
 #define claw_open 1000
 #define claw_close 200
+#define black 3000
+#define white 220
+#define grey 1630
 int gyrocalibrate() {
     int changeGyroZ = 0;//find average gyro value when still
     int i = 0;
@@ -26,16 +30,16 @@ void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in
     int anglechange = 0;
     for(i = 0; i < time; i++) {//gyro move
         anglechange += gyro_z()-changeGyroZ;
-        motor(0, speed-anglechange/200);
-        motor(1, speed+anglechange/200);
+        motor(0, speed-anglechange/300);
+        motor(1, speed+anglechange/300);
         msleep(1);
     }
     ao();
 }
 void turn(int direction, int degree, int changeGyroZ) {
-    int i = 0;
+    //int i = 0;
     int anglechange = 0;
-    int x = degree*111000/90;
+    int x = degree*109000/90;
     if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
     	while(anglechange > -x) {
         	anglechange += gyro_z()-changeGyroZ;
@@ -53,35 +57,66 @@ void turn(int direction, int degree, int changeGyroZ) {
     }
     ao();
 }
+
+void drive_until_line(int color, int speed, int change){
+   if(color == white+469){
+       while(analog(0) > color+469){
+            move(speed, 5, change);
+       }
+   }
+   else{ 
+  	 while(analog(0) < color){
+       	move(speed, 5, change);
+   }
+   }
+   //drive_until_line(white, change);
+}
+
 int main()
 {
     //start centered on pipe connectors
     int change = gyrocalibrate();
     enable_servos();
+/*
+drive_until_line(black, 100, change);
+drive_until_line(white+469, 20, change);
+*/
+    
   
 
     set_servo_position(2, 644);
     msleep(500);
         
-    set_servo_position(1, 1000);
+    set_servo_position(1, claw_up);
     msleep(500);
+    
+    set_servo_position(0, claw_close);
         
-    move(100, 400, change); //drive out of base
-    msleep(500);
+    drive_until_line(black, 100, change);
+	drive_until_line(white+469, 20, change);
     
-    turn(1, 90, change); //90 clockwise
+    drive_until_line(grey, 100, change);
+    
+    turn(0, 90, change); //90 clockwise
     msleep(1000);
     
-    move(-100,350, change);//move back to align
-    msleep(500);
- 
+    move(100,600, change);//move back to align
+    msleep(2000);
+/*
    	turn(0, 90, change); //90 counterclockwise
-    msleep(1000);
+    msleep(2000);
 
     move(-100, 600, change); //drive back to ram into barrel
     msleep(500);
- */
+    
+    //Proceed to get leftmost pile of poms
+    
+   
+    //turn left
+    //execute pom pick up
+    //
 
+*/
     disable_servos();
     return 0;
     

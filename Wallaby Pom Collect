@@ -6,11 +6,28 @@ port 1 = left motor
 */
 #define miniservo_up 644
 #define miniservo_down 1713
-#define miniservo_collect 877
-#define claw_down 1529
-#define claw_up 42
+#define miniservo_collect 450
+#define claw_down 1860
+#define claw_up 170
 #define claw_open 1000
 #define claw_close 200
+int slowservo(int port, int position) {
+    int i = 0;
+    int x = get_servo_position(port);
+    if(x > position) {
+  	  	while(x > position) {
+            x -= 10;
+        	set_servo_position(port, x);
+            msleep(5);
+    	}
+    } else {
+        while(x < position) {
+            x += 10;
+        	set_servo_position(port, x);
+            msleep(5);
+    	}
+    }
+}
 int gyrocalibrate() {
     int changeGyroZ = 0;//find average gyro value when still
     int i = 0;
@@ -33,7 +50,7 @@ void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in
     ao();
 }
 void turn(int direction, int degree, int changeGyroZ) {
-    int i = 0;
+    //int i = 0;
     int anglechange = 0;
     int x = degree*111000/90;
     if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
@@ -70,8 +87,7 @@ int pick_up_poms()
     set_servo_position(0, claw_close);
     msleep(1500);
     
-    set_servo_position(1, claw_up);
-    msleep(1500);
+    slowservo(1, claw_up);
     
     set_servo_position(0, 800);
     msleep(500);
@@ -79,11 +95,14 @@ int pick_up_poms()
     set_servo_position(1, claw_down);
     msleep(500);
     
+    set_servo_position(1, claw_up+500);
+    msleep(500);
+    
     while(i < 2){
-        set_servo_position(2, miniservo_down);
-        msleep(1000);
-        set_servo_position(2, miniservo_up);
-        msleep(1000);
+        slowservo(2, miniservo_down);
+ 
+        slowservo(2, miniservo_up);
+        
         i++;
     }
 
@@ -95,31 +114,48 @@ int main()
     enable_servos();
     	int change = gyrocalibrate();
     	
+     
+    	set_servo_position(3, 1981);
+    	msleep(500);
+    
+    	set_servo_position(2, 800);
+    	msleep(500);
+    
     	set_servo_position(1, claw_up+300);
     	msleep(1000);
     	
-    	move(50,400,change);
+    	move(50,425,change);
     	ao();
     	msleep(1000);
     	
-        turn(0,30,change);
+        turn(0,25,change);
     	msleep(1000);
   		
-    	move(-50,15,change);
-    	ao();
-    	msleep(1000);
+    	//move(-50,15,change);
+    	//ao();
+    	//msleep(1000);
     
     	pick_up_poms();
     
     	set_servo_position(1, claw_up);
-    
+  
     	turn(1,25,change);
     	msleep(1000);
-    	
-    	move(60,70,change);
+       
+
+    	move(60,1000,change);
     	ao();
     	msleep(1000);
-    
+/*    	
+   		turn(0,30, change);
+    	msleep(1000);
+    	
+    	move(-50,300,change);
+    	ao();
+    	msleep(1000);
+    	
+    	pick_up_poms();
+   
     	
     	
 /*

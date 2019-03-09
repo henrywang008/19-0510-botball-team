@@ -1,0 +1,159 @@
+#include <kipr/botball.h>
+
+/*
+Author:Kevin Zhang
+Team: 190510
+Walabi: 3828
+Objective: Assuming we already know which building is burning, get large blue water cube and drive to the burning building
+
+PROPRIETARY AND CONFIDENTIAL All Rights Reserved "Sketch in the Air" 2019
+*/
+//IMPORTANT: AS OF 3/8/2019, THIS IS ERROR CODE, WALLABY DIED BEFORE I FINISHED DEBUGGING
+
+int gyroCalibrate() {
+    int changeGyroZ = 0;//find average gyro value when still
+    int i = 0;
+    for(i = 0; i < 10000; i++) {
+        changeGyroZ += gyro_z();
+    }
+    changeGyroZ /= 10000;
+    return changeGyroZ;
+}
+
+
+
+void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
+    int i = 0;
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange += gyro_z()-changeGyroZ;
+        create_drive_direct(speed+anglechange/200, speed-anglechange/200);
+        msleep(1);
+    }
+    create_stop();
+}
+
+/*
+void turn(int direction, int degree, int changeGyroZ) {
+    int anglechange = 0;
+    int x = degree*110000/90;
+    if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
+    	while(anglechange > -x) {
+        	anglechange += gyro_z()-changeGyroZ;
+            create_drive_direct(100, -100);
+        	msleep(1);
+    	}
+    } else {
+        while(anglechange < x) {
+        	anglechange += gyro_z()-changeGyroZ;
+        	create_drive_direct(-100, 100);
+        	msleep(1);
+    	}
+    }
+    create_stop();
+    msleep(200);
+}
+*/
+int main()
+{
+    //building order is left to right if you stand with your back facing the TV in Henry's house
+    int xa = 0;
+    int xb = 0;
+    int xc = 0;
+
+
+    if (xa == 1) {
+        create_connect();
+        create_drive_direct(-100, 100);     //turn left 180, assuming the create is facing forward
+        msleep(1400);
+        create_drive_direct(100, 100);
+        msleep(500);
+        create_drive_direct(-100, 100);
+        msleep(1400);
+        while (!get_create_lbump() == 0 || !get_create_rbump() == 0) {
+            create_drive_direct(170, 170);
+        }
+    }
+    else {
+        if (xb == 1) {
+            create_drive_direct(-100, 100);
+            msleep(1400);
+            create_drive_direct(100, 100);
+            msleep(1500);
+            create_drive_direct(-100, 100);
+            msleep(1400);
+            while (!get_create_lbump() == 0 || !get_create_rbump() == 0) {
+                create_drive_direct(170, 170);
+            }
+        }
+        else {
+            if (xc == 1) {
+                create_drive_direct(-100, 100);     //turn left
+                msleep(1400);
+                create_drive_direct(100, 100);
+                msleep(2500);
+                create_drive_direct(-100, 100);
+                while (!get_create_lbump() == 0 || !get_create_rbump() == 0) {
+                    create_drive_direct(170, 170);
+                }
+            }
+
+        }
+    }
+}
+	create_drive_direct(100, -100);     //turn right
+	msleep(1400);
+	create_drive_direct(100, 100);     //drive forward to the blue block, distance not tested
+	msleep(2500);
+	create_drive_direct(100, -100);      //turn right 180
+	msleep(2800);
+	create_drive_direct(100, 100);
+	msleep(1500);
+	while (analog(0) < 2250)     //light sensor port not determined yet
+	{
+    	create_drive_direct(150, 150);
+	}
+
+	create_drive_direct(100, -100);
+	msleep(1400);
+
+	xa = 0;     //all buildings set as unburning for now
+	xb = 0;     
+	xc = 0;
+
+	if (xa == 1)     //building 1 
+	{
+    	create_drive_direct(100, 100);     //distance not tested yet
+    	msleep(200);
+    	create_stop();
+    	create_drive_direct(-100, 100);
+    	msleep(1400);     //turn left
+    	//place large blue cube
+	}
+	else {
+    	if (xb == 1) {     //building 2
+        	create_drive_direct(100, 100);
+        	msleep(500);
+        	create_stop();
+        	create_drive_direct(-100, 100);
+        	msleep(1400);     //turn left
+        	//place large blue cube
+    	}
+    	else {
+        	if (xc == 1) {     //building 2
+            	create_drive_direct(100, 100);
+            	msleep(500);
+            	create_stop();
+            	create_drive_direct(-100, 100);
+            	msleep(1400);     //turn left
+            	//place large blue cube
+        	}
+        	else {
+            	printf("wtf\n\n\n\n\n");
+        	}
+    	}
+	}
+
+	printf("Return Zero\n");
+	return 0;
+	}

@@ -3,14 +3,71 @@
 /*
 port 0 = right motor
 port 1 = left motor
+90 degree turn ~ 1010
+
 */
-#define miniservo_up 644
-#define miniservo_down 1713
-#define miniservo_collect 450
-#define claw_down 1860
-#define claw_up 170
-#define claw_open 1000
-#define claw_close 200
+#define miniservo_up 675
+#define miniservo_down 1450
+#define miniservo_collect 600
+#define claw_down 1983
+#define claw_up 334
+#define claw_open 1024
+#define claw_close 141
+#define black 3800
+#define white 210
+#define grey 1800
+int gyrocalibrate() {
+    int changeGyroZ = 0;//find average gyro value when still
+    int i = 0;
+    for(i = 0; i < 10000; i++) {
+        changeGyroZ += gyro_z();
+    }
+    changeGyroZ /= 10000;
+
+    return changeGyroZ;
+}
+void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
+    int i = 0;
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange += gyro_z()-changeGyroZ;
+        motor(0, speed+anglechange/300);
+        motor(1, speed-anglechange/300);
+        msleep(1);
+    }
+    ao();
+}
+void turn(int direction, int degree, int changeGyroZ) {
+    int i = 0;
+    int anglechange = 0;
+    int x = degree*57000/90;
+    if(direction == 1) { // 1 = counterclockwise, 0 = clockwise
+        for(i = 0; i < 100; i++) {
+            motor(0, 100);
+            motor(1, -100);
+            msleep(1);
+        }
+        while(anglechange > -x) {
+            anglechange += gyro_z()-changeGyroZ;
+            motor(0, 100);
+            motor(1, -100);
+            msleep(1);
+        }
+    } else {
+        for(i = 0; i < 100; i++) {
+            motor(0, -100);
+            motor(1, 100);
+            msleep(1);
+        }
+        while(anglechange < x) {
+            anglechange += gyro_z()-changeGyroZ;
+            motor(0, -100);
+            motor(1, 100);
+            msleep(1);
+        }
+    }
+    ao();
+}
 int slowservo(int port, int position) {
     int i = 0;
     int x = get_servo_position(port);
@@ -28,47 +85,28 @@ int slowservo(int port, int position) {
     	}
     }
 }
-int gyrocalibrate() {
-    int changeGyroZ = 0;//find average gyro value when still
-    int i = 0;
-    for(i = 0; i < 10000; i++) {
-        changeGyroZ += gyro_z();
-    }
-    changeGyroZ /= 10000;
-    
-   	return changeGyroZ;
-}
-void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
-    int i = 0;
-    int anglechange = 0;
-    for(i = 0; i < time; i++) {//gyro move
-        anglechange += gyro_z()-changeGyroZ;
-        motor(0, speed-anglechange/200);
-        motor(1, speed+anglechange/200);
-        msleep(1);
-    }
-    ao();
-}
-void turn(int direction, int degree, int changeGyroZ) {
-    //int i = 0;
-    int anglechange = 0;
-    int x = degree*111000/90;
-    if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
-    	while(anglechange > -x) {
+
+void drive_until_line(int color, int speed, int changeGyroZ){
+   if(color == white+469){
+       int i = 0;
+       int anglechange = 0;
+       while(analog(0) > color+469){
         	anglechange += gyro_z()-changeGyroZ;
-        	motor(0, -100);
-        	motor(1, 100);
+        	motor(0, speed+anglechange/300);
+        	motor(1, speed-anglechange/300);
         	msleep(1);
-    	}
-    } else {
-        while(anglechange < x) {
+       }
+   } else {
+       int i = 0;
+       int anglechange = 0;
+       while(analog(0) < color-1400){
         	anglechange += gyro_z()-changeGyroZ;
-        	motor(0, 100);
-        	motor(1, -100);
+        	motor(0, speed+anglechange/300);
+        	motor(1, speed-anglechange/300);
         	msleep(1);
-    	}
-    }
-    ao();
+       }
+   }
+   ao();
 }
 int pick_up_poms()
 {
@@ -109,6 +147,8 @@ int pick_up_poms()
     
     return 0;
 }
+
+
 int main()
 {
     enable_servos();
@@ -128,36 +168,37 @@ int main()
     	ao();
     	msleep(1000);
     	
-        turn(0,25,change);
-    	msleep(1000);
+        //turn(0,0,change);
+    	motor(0,-100);
+    	motor(1, 100);
+    	msleep(750);
   		
     	//move(-50,15,change);
     	//ao();
     	//msleep(1000);
-    
+/*    
     	pick_up_poms();
     
     	set_servo_position(1, claw_up);
   
-    	turn(1,25,change);
+    	turn(1,0,change);
     	msleep(1000);
        
 
     	move(60,1000,change);
     	ao();
     	msleep(1000);
-/*    	
-   		turn(0,30, change);
+  	
+   		turn(0,0, change);
     	msleep(1000);
     	
-    	move(-50,300,change);
+    	move(-50,150,change);
     	ao();
     	msleep(1000);
     	
     	pick_up_poms();
    
-    	
-    	
+*/   	
 /*
     	move(50,700,change);
     	ao();
@@ -167,7 +208,7 @@ int main()
     	move(50,1000,change);
     	ao();
     	msleep(1000);
-*/    
+*/   
     
     disable_servos();
     return 0;

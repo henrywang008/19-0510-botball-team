@@ -1,3 +1,5 @@
+//start position 750
+
 #include <kipr/botball.h>
 
 /*
@@ -56,7 +58,40 @@ void turn(int direction, int degree, int changeGyroZ) {
 */
 int main()
 {
+    create_connect();
+    int x;
+    const float flatpos = 750.0;
+    x = gyroCalibrate();
+    move(100, 250, x);
+    create_drive_direct(-100, 100);      //turn left
+    msleep(2800);
+    create_stop();
+    msleep(1000);
+    //drop items
+    create_drive_direct(100, -100);     //turn right
+    msleep(1400);
+    move(-100, 1200, x);
+    create_drive_direct(-100, 100);     //turn left
+    msleep(1400);
+    move(-100, 1210, x);
+    msleep(150);
+    move(45, 300, x);
+    msleep(150);
+    move(90, 20, x);
+    create_drive_direct(100, -100);     //turn right
+    msleep(1160);
+    move(-50, 50, x);
+    //get blue cube
+    //move_to_position(0, 100, flatpos);
+    //msleep(150);
+    
+    
+    
+    
+    
+    
     //building order is left to right if you stand with your back facing the TV in Henry's house
+    /*
     int xa = 0;
     int xb = 0;
     int xc = 0;
@@ -101,59 +136,57 @@ int main()
         }
     }
 }
-	create_drive_direct(100, -100);     //turn right
-	msleep(1400);
-	create_drive_direct(100, 100);     //drive forward to the blue block, distance not tested
-	msleep(2500);
-	create_drive_direct(100, -100);      //turn right 180
-	msleep(2800);
-	create_drive_direct(100, 100);
-	msleep(1500);
-	while (analog(0) < 2250)     //light sensor port not determined yet
-	{
-    	create_drive_direct(150, 150);
-	}
+create_drive_direct(100, -100);     //turn right
+msleep(1400);
+create_drive_direct(100, 100);     //drive forward to the blue block, distance not tested
+msleep(2500);
+create_drive_direct(100, -100);      //turn right 180
+msleep(2800);
+create_drive_direct(100, 100);
+msleep(1500);
+//while (analog(0) < 2250)     //light sensor port not determined yet
+//    create_drive_direct(150, 150);
 
-	create_drive_direct(100, -100);
-	msleep(1400);
+create_drive_direct(100, -100);
+msleep(1400);
 
-	xa = 0;     //all buildings set as unburning for now
-	xb = 0;     
-	xc = 0;
+xa = 0;     //all buildings set as unburning for now
+xb = 0;     
+xc = 0;
 
-	if (xa == 1)     //building 1 
-	{
-    	create_drive_direct(100, 100);     //distance not tested yet
-    	msleep(200);
-    	create_stop();
-    	create_drive_direct(-100, 100);
-    	msleep(1400);     //turn left
-    	//place large blue cube
-	}
-	else {
-    	if (xb == 1) {     //building 2
-        	create_drive_direct(100, 100);
-        	msleep(500);
-        	create_stop();
-        	create_drive_direct(-100, 100);
-        	msleep(1400);     //turn left
-        	//place large blue cube
-    	}
-    	else {
-        	if (xc == 1) {     //building 2
-            	create_drive_direct(100, 100);
-            	msleep(500);
-            	create_stop();
-            	create_drive_direct(-100, 100);
-            	msleep(1400);     //turn left
-            	//place large blue cube
-        	}
-        	else {
-            	printf("wtf\n\n\n\n\n");
-        	}
-    	}
-	}
-
-	printf("Return Zero\n");
-	return 0;
-	}
+if (xa == 1)     //building 1 
+{
+    create_drive_direct(100, 100);     //distance not tested yet
+    msleep(200);
+    create_stop();
+    create_drive_direct(-100, 100);
+    msleep(1400);     //turn left
+    //place large blue cube
+}
+else {
+    if (xb == 1) {     //building 2
+        create_drive_direct(100, 100);
+        msleep(500);
+        create_stop();
+        create_drive_direct(-100, 100);
+        msleep(1400);     //turn left
+        //place large blue cube
+    }
+    else {
+        if (xc == 1) {     //building 2
+            create_drive_direct(100, 100);
+            msleep(500);
+            create_stop();
+            create_drive_direct(-100, 100);
+            msleep(1400);     //turn left
+            //place large blue cube
+        }
+        else {
+            printf("wtf\n\n\n\n\n");
+        }
+    }
+}
+*/
+printf("Return Zero\n");
+return 0;
+}

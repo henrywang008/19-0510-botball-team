@@ -6,265 +6,293 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 /*\
-==========================================================================\
-    Copyright 2019 All Rights Reserved - Alex Chang\
-    "Sketch is in the air" - Sketch 100\
-	Name:          Camera Test Alex\
-	By:            Alex Chang\
-	Last Updated:  3/15/19\
-\
-	PROPRIETARY and CONFIDENTIAL\
-============================================================================\
-*/\
-#include <kipr/botball.h>\
-int camData[4];\
-int x;\
-int building;\
-\
-const int motorPin = 0;\
-const int clawPin = 0;\
-const int wristPin = 1;\
-\
-const int clawClose = 200;\
-const int clawOpen = 830;\
-\
-const int wristMiddle = 1400;\
-const int wristUp = 1600;\
-const int wristDown = 2049;\
-\
-const int armMiddle = 1750;\
-const int armUp = 2700;\
-const int armDown = -775;\
-\
-\
-\
-void updateCam()\{\
-	camData[1] = camera_update();\
-    camData[2] = get_object_count(0);\
-    if(camData[2] > 0)\{\
-    	camData[3] = get_object_center_x(0, camData[2]-1);\
-    	camData[4] = get_object_center_y(0, camData[2]-1);\
-        printf("Camera Update: %d, Objects: %d, x: %d, y: %d ", camData[1], camData[2], camData[3], camData[4]); \
-    \}else\{\
-    	printf("Camera Update: %d, Objects: %d ", camData[1], camData[2]);  \
-    \}//if else end\
-\}//updateCam end\
-\
-\
-\
-void openCam()\{\
-	int open = camera_open_black();\
-	\
-    if(open == 1)\{\
-        printf("Successfully opened\\n");\
-        int channel = get_channel_count();\
-    	printf("Channel amount is :%d\\n\\n", channel);\
-    \}else if(open == 0)\{\
-        printf("Failed to open\\n");\
-        msleep(500);\
-        openCam();\
-    \}//opening if else end\
-\
-\}//openCam end\
-\
-\
-\
-int findObject()\{\
-	int i, objects, final, av = 0;  \
-    final = 0;\
-    \
-    for(i = 1; i <= 35; i++)\{\
-    	updateCam();\
-        printf("EMPTY\\n");\
-    \}//empty for end\
-    \
-    for(i = 1; i <= 20; i++)\{\
-        updateCam();\
-        objects = camData[2];\
-        if(objects > 0)\{\
-            printf("Item detected\\n");\
-            final++;\
-            av = av + objects;\
-        \}else\{\
-            printf("Item not detected\\n");\
-        \}//Objects if else end\
-        msleep(20);\
-    \}//for end\
-    \
-    if(final > 0)\{\
-    	av = av/final;\
-    \}else\{\
-    	av = 0;\
-    \}//else end\
-    printf("Successes: %d, Average: %d\\n", final, av);\
-    \
-    if(final >= 15)\{\
-    	return 1;\
-    \}else\{\
-    	return 0;\
-    \}//else end\
-\}//findObject end\
-\
-\
-\
-int gyroCalibrate() \{\
-    int changeGyroZ = 0;//find average gyro value when still\
-    int i = 0;\
-    for(i = 0; i < 10000; i++) \{\
-        changeGyroZ += gyro_z();\
-    \}\
-    changeGyroZ /= 10000;\
-   	return changeGyroZ;\
-\}\
-\
-\
-\
-void move(int speed, int time, int changeGyroZ) \{//speed -100 to 100, time is in miliseconds\
-    int i = 0;\
-    int anglechange = 0;\
-    for(i = 0; i < time; i++) \{//gyro move\
-        anglechange += gyro_z()-changeGyroZ;\
-        create_drive_direct(speed+anglechange/200, speed-anglechange/200);\
-        msleep(1);\
-    \}\
-    create_stop();\
-\}\
-\
-\
-\
-void turn(int direction, int degree, int changeGyroZ) \{\
-    int anglechange = 0;\
-    int x = degree*110000/90;\
-    if(direction == 1) \{ // 1 = clockwise, 0 = counter-clockwise\
-    	while(anglechange > -x) \{\
-        	anglechange += gyro_z()-changeGyroZ;\
-            create_drive_direct(100, -100);\
-        	msleep(1);\
-    	\}\
-    \} else \{\
-        while(anglechange < x) \{\
-        	anglechange += gyro_z()-changeGyroZ;\
-        	create_drive_direct(-100, 100);\
-        	msleep(1);\
-    	\}\
-    \}\
-    create_stop();\
-    msleep(200);\
-\}\
-\
-\
-\
-void pickUp(int armPos, int wristPos)\{\
-	move_to_position(motorPin, 1000, armPos);		//set arm height\
-    msleep(200);\
-    set_servo_position(wristPin, wristPos);			//set wrist angle\
-    msleep(50);\
-    set_servo_position(clawPin, clawOpen);			//open claw\
-    msleep(50);\
-    \
-    //move(-100, 100, x);								//backward/towards\
-    //msleep(100);\
-    \
-    int i;\
-    for(i = 1; i < 63; i++)\{\
-        int clawPos = get_servo_position(clawPin);\
-    	set_servo_position(clawPin, clawPos - 10);  //close claw\
-    	msleep(5);\
-    \}//claw close end\
-    \
-    move_to_position(motorPin, 1000, armPos + 400);	//pick arm up\
-    \
-    //msleep(800);\
-    //move(100, 100, x);								//forward/away\
-    //msleep(100);\
-    \
-    \
-    \
-\}//pickUp end\
-\
-\
-void putDown(int armPos, int wristPos)\{\
-    set_servo_position(wristPin, wristDown);		//set wrist angle\
-    msleep(50);\
-	move_to_position(motorPin, 1000, armDown);		//lower arm\
-    msleep(2000);\
-    set_servo_position(clawPin, clawOpen);			//open claw\
-    msleep(50);\
-	\
-	\
-    move_to_position(motorPin, 1000, armPos);		//set arm height\
-    msleep(1500);\
-    set_servo_position(wristPin, wristPos);			//set wrist ange\
-    msleep(50);\
-    \
-\}//putDown end\
-\
-\
-int main()\{\
-    x = gyroCalibrate();\
-    enable_servos();\
-    create_connect();\
-    openCam();\
-    \
-    printf("Moving arm down\\n");\
-    move_to_position(motorPin, 500, 0);\
-    msleep(500);\
-    set_servo_position(clawPin, clawClose);\
-    msleep(100);\
-    set_servo_position(wristPin, 0);\
-    \
-    msleep(5000);\
-	//wait for light\
-    \
-    printf("Moving arm up\\n");\
-    move_to_position(motorPin, 1000, armMiddle);\
-    msleep(2700);\
-    set_servo_position(wristPin, wristMiddle);\
-    msleep(100);\
-    set_servo_position(clawPin, clawOpen);\
-    msleep(100);\
-    \
-    \
-    move(100, 500, x);						//forward\
-    msleep(200);\
-    \
-    create_drive_direct(70, -70);			//turn right 90\
-    msleep(2200);\
-    create_stop();\
-    \
-    move(-100, 1350, x);						//backward\
-    msleep(100);\
-    create_stop();\
-    \
-    if(findObject() == 0)\{\
-        building = 0;\
-    	pickUp(armMiddle, wristMiddle);\
-        move(100, 300, x);						//forward\
-    	msleep(200);\
-        \
-        create_drive_direct(-70, 70);			//turn left ~160\
-    	msleep(4000);\
-    	create_stop();\
-        \
-        putDown(armMiddle, wristMiddle);\
-        //move to spot and stop\
-    \}else\{\
-        building = 1;\
-    	move(100, 300, x);						//forward\
-    	msleep(100);\
-        \
-        create_drive_direct(-70, 70);			//turn left 90\
-    	msleep(2200);\
-        create_stop();\
-        \
-        \
-        \
-		//pick up, turn around, put down, go to spot\
-        	\
-    \}//full get botguy if end\
-    \
-    disable_servos();\
-    create_disconnect();\
-    camera_close();\
-	return 0;\
-\}}
+/*
+==========================================================================
+    Copyright 2019 All Rights Reserved - Alex Chang
+    "Sketch is in the air" - Sketch 100
+	Name:          Camera Test Alex
+	By:            Alex Chang
+	Last Updated:  3/17/19
+
+	PROPRIETARY and CONFIDENTIAL
+============================================================================
+*/
+#include <kipr/botball.h>
+int camData[4];
+int x;
+int building;
+
+const int motorPin = 0;
+const int clawPin = 0;
+const int wristPin = 1;
+
+const int clawClose = 200;
+const int clawOpen = 830;
+
+const int wristMiddle = 1400;
+const int wristUp = 1200;
+const int wristDown = 2049;
+
+const int armMiddle = 1650;
+const int armUp = 2700;
+const int armDown = -775;
+
+
+
+void updateCam(){
+	camData[1] = camera_update();
+    camData[2] = get_object_count(0);
+    if(camData[2] > 0){
+    	camData[3] = get_object_center_x(0, camData[2]-1);
+    	camData[4] = get_object_center_y(0, camData[2]-1);
+        printf("Camera Update: %d, Objects: %d, x: %d, y: %d ", camData[1], camData[2], camData[3], camData[4]); 
+    }else{
+    	printf("Camera Update: %d, Objects: %d ", camData[1], camData[2]);  
+    }//if else end
+}//updateCam end
+
+
+
+void openCam(){
+	int open = camera_open_black();
+	
+    if(open == 1){
+        printf("Successfully opened\n");
+        int channel = get_channel_count();
+    	printf("Channel amount is :%d\n\n", channel);
+    }else if(open == 0){
+        printf("Failed to open\n");
+        msleep(500);
+        openCam();
+    }//opening if else end
+
+}//openCam end
+
+
+
+int findObject(){
+	int i, objects, final, av = 0;  
+    final = 0;
+    
+    for(i = 1; i <= 50; i++){
+    	updateCam();
+        printf("EMPTY\n");
+    }//empty for end
+    
+    for(i = 1; i <= 20; i++){
+        updateCam();
+        objects = camData[2];
+        if(objects > 0){
+            printf("Item detected\n");
+            final++;
+            av = av + objects;
+        }else{
+            printf("Item not detected\n");
+        }//Objects if else end
+        msleep(20);
+    }//for end
+    
+    if(final > 0){
+    	av = av/final;
+    }else{
+    	av = 0;
+    }//else end
+    printf("Successes: %d, Average: %d\n", final, av);
+    
+    if(final >= 15){
+    	return 1;
+    }else{
+    	return 0;
+    }//else end
+}//findObject end
+
+
+
+int gyroCalibrate() {
+    int changeGyroZ = 0;//find average gyro value when still
+    int i = 0;
+    for(i = 0; i < 10000; i++) {
+        changeGyroZ += gyro_z();
+    }
+    changeGyroZ /= 10000;
+   	return changeGyroZ;
+}
+
+
+
+void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
+    int i = 0;
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange += gyro_z()-changeGyroZ;
+        create_drive_direct(speed+anglechange/200, speed-anglechange/200);
+        msleep(1);
+    }
+    create_stop();
+}
+
+
+
+void turn(int direction, int degree, int changeGyroZ) {
+    int anglechange = 0;
+    int x = degree*110000/90;
+    if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
+    	while(anglechange > -x) {
+        	anglechange += gyro_z()-changeGyroZ;
+            create_drive_direct(100, -100);
+        	msleep(1);
+    	}
+    } else {
+        while(anglechange < x) {
+        	anglechange += gyro_z()-changeGyroZ;
+        	create_drive_direct(-100, 100);
+        	msleep(1);
+    	}
+    }
+    create_stop();
+    msleep(200);
+}
+
+
+
+void pickUp(int armPos, int wristPos){
+	/*move_to_position(motorPin, 1000, armPos);		//set arm height
+    msleep(200);
+    set_servo_position(wristPin, wristPos);			//set wrist angle
+    msleep(50);
+    set_servo_position(clawPin, clawOpen);			//open claw
+    msleep(50);*/
+    
+    //move(100, 100, x);
+    
+    int i;
+    for(i = 1; i < 63; i++){
+        int clawPos = get_servo_position(clawPin);
+    	set_servo_position(clawPin, clawPos - 10);  //close claw
+    	msleep(5);
+    }//claw close end
+    
+    move_to_position(motorPin, 1000, armPos + 600);	//pick arm up   
+    msleep(400);
+    
+}//pickUp end
+
+
+void putDown(int armPos, int wristPos){
+    set_servo_position(wristPin, wristDown);		//set wrist angle
+    msleep(50);
+	move_to_position(motorPin, 1000, armDown);		//lower arm
+    msleep(4000);
+    set_servo_position(clawPin, clawOpen);			//open claw
+    msleep(50);
+	
+	
+    move_to_position(motorPin, 1000, armPos);		//set arm height
+    msleep(2000);
+    set_servo_position(wristPin, wristPos);			//set wrist ange
+    msleep(50);
+    
+}//putDown end
+
+
+int main(){
+    x = gyroCalibrate();
+    enable_servos();
+    create_connect();
+    openCam();
+    
+    printf("Moving arm down\n");
+    move_to_position(motorPin, 500, 0);
+    msleep(500);
+    set_servo_position(clawPin, clawClose);
+    msleep(100);
+    set_servo_position(wristPin, 0);
+    
+    msleep(5000);
+	//wait for light
+    
+    create_drive_direct(100, 100);
+    while(get_create_rcliff_amt() > 2200){
+    	create_drive_direct(100, 100);		//move to black line first
+    }//while loop end
+    create_stop();
+    move(100, 100, x);
+    msleep(100);
+    
+    
+    create_drive_direct(70, -70);			//turn right 90
+    msleep(2200);
+    create_stop();
+    
+    printf("Moving arm up\n");
+    move_to_position(motorPin, 1000, armMiddle);
+    msleep(2200);
+    set_servo_position(wristPin, wristMiddle);
+    msleep(100);
+    set_servo_position(clawPin, clawOpen);
+    msleep(100);
+    
+    create_drive_direct(-100, -100);
+    while(get_create_lcliff_amt() > 2200){
+    	create_drive_direct(-100, -100);
+    }//while loop end							//move to black line second(front of buildings)
+	msleep(75);
+    create_stop();
+    
+    
+    if(findObject() == 0){
+        building = 0;
+    	pickUp(armMiddle, wristMiddle);
+        move(100, 300, x);						//forward to back away from building
+    	msleep(200);
+        
+        create_drive_direct(-70, 70);			//turn left ~160
+    	msleep(4000);
+    	create_stop();
+        
+        putDown(armMiddle, wristMiddle);
+        //move to spot and stop
+    }else{
+        building = 1;
+        
+    	move(100, 300, x);						//forward to get away from first building
+    	msleep(100);
+        
+        create_drive_direct(-70, 70);			//turn left 90
+    	msleep(2200);
+        create_stop();
+        
+        move_to_position(motorPin, 500, armMiddle);
+   		msleep(500);
+    	set_servo_position(clawPin, clawOpen);
+    	msleep(100);
+    	set_servo_position(wristPin, wristMiddle);
+        
+        move(-100, 1500, x);					//backward to last building
+    	msleep(100);
+        
+        create_drive_direct(70, -70);			//turn right 90
+    	msleep(2200);
+        create_stop();
+        
+        move(-100, 325, x);						//backward to line up with building
+    	msleep(100);
+        
+        pickUp(armMiddle, wristMiddle);
+        move(100, 300, x);						//forward to back away from building
+    	msleep(200);
+        
+        create_drive_direct(70, -70);			//turn right ~160
+    	msleep(4000);
+    	create_stop();
+        
+        putDown(armMiddle, wristMiddle);
+		//pick up, turn around, put down, go to spot
+        	
+    }//full get botguy if end
+    
+    disable_servos();
+    create_disconnect();
+    camera_close();
+	return 0;
+}

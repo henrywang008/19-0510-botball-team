@@ -1,27 +1,29 @@
 #include <kipr/botball.h>
 
 /*
-port 0 = right motor
-port 1 = left motor
+port 1 = right motor
+port 0 = left motor
 
 */
 #define miniservo_up 591
 #define miniservo_down 1450
 #define miniservo_collect 600
 #define claw_down 1983
-#define claw_up 334
-#define claw_open 1024
+#define claw_up 180
+#define claw_open 869
 #define claw_close 141
+#define slap_rest 0
+#define slap_slap 900
 #define black 3800
 #define white 210
 #define grey 1800
 int gyrocalibrate() {
     int changeGyroZ = 0;//find average gyro value when still
     int i = 0;
-    for(i = 0; i < 10000; i++) {
+    for(i = 0; i < 5000; i++) {
         changeGyroZ += gyro_z();
     }
-    changeGyroZ /= 10000;
+    changeGyroZ /= 5000;
 
     return changeGyroZ;
 }
@@ -71,90 +73,112 @@ int slowservo(int port, int position) {
     int i = 0;
     int x = get_servo_position(port);
     if(x > position) {
-  	  	while(x > position) {
+        while(x > position) {
             x -= 10;
-        	set_servo_position(port, x);
-            msleep(10);
-    	}
+            set_servo_position(port, x);
+            msleep(8);
+        }
     } else {
         while(x < position) {
             x += 10;
-        	set_servo_position(port, x);
-            msleep(5);
-    	}
+            set_servo_position(port, x);
+            msleep(8);
+        }
     }
 }
-
+int slowerservo(int port, int position) {
+    int i = 0;
+    int x = get_servo_position(port);
+    if(x > position) {
+        while(x > position) {
+            x -= 10;
+            set_servo_position(port, x);
+            msleep(16);
+        }
+    } else {
+        while(x < position) {
+            x += 10;
+            set_servo_position(port, x);
+            msleep(16);
+        }
+    }
+}
 void drive_until_line(int port, int color, int speed, int changeGyroZ){
-   if(color == white+469){
-       int i = 0;
-       int anglechange = 0;
-       while(analog(port) > color+469){
-        	anglechange += gyro_z()-changeGyroZ;
-        	motor(0, speed+anglechange/300);
-        	motor(1, speed-anglechange/300);
-        	msleep(1);
-       }
-   } else {
-       int i = 0;
-       int anglechange = 0;
-       while(analog(port) < color-1400){
-        	anglechange += gyro_z()-changeGyroZ;
-        	motor(0, speed+anglechange/300);
-        	motor(1, speed-anglechange/300);
-        	msleep(1);
-       }
-   }
-   ao();
+    if(color == white+469){
+        int i = 0;
+        int anglechange = 0;
+        while(analog(port) > color+469){
+            anglechange += gyro_z()-changeGyroZ;
+            motor(0, speed+anglechange/300);
+            motor(1, speed-anglechange/300);
+            msleep(1);
+        }
+    } else {
+        int i = 0;
+        int anglechange = 0;
+        while(analog(port) < color-1400){
+            anglechange += gyro_z()-changeGyroZ;
+            motor(0, speed+anglechange/300);
+            motor(1, speed-anglechange/300);
+            msleep(1);
+        }
+    }
+    ao();
 }
 int pick_up_poms()
 {
-    
+
     int i;
-    
+
     set_servo_position(2, miniservo_collect);
     msleep(500);
-    
+
     set_servo_position(0, claw_open);
     msleep(500);
-    
+
     set_servo_position(1, claw_down);
     msleep(1000);
-    
+
     set_servo_position(0, claw_close);
     msleep(1500);
-    
+
     slowservo(1, claw_up);
-    
+
     set_servo_position(0, 800);
     msleep(500);
-    
+
     set_servo_position(1, claw_down);
     msleep(500);
-    
+
     set_servo_position(1, claw_up+500);
     msleep(500);
-    
+
     while(i < 2){
         slowservo(2, miniservo_down);
- 
+
         slowservo(2, miniservo_up);
-        
+
         i++;
     }
 
-    
+
     return 0;
 }
 void lineSquareUp() {
-    while(analog(0) < 1000 && analog(1) < 1500) {
+    while(analog(0) < 3000 && analog(1) < 3000) {
         motor(0, 25);
         motor(1, 25);
         msleep(1);
     }
     ao();
-    if(analog(0) > 1000) {
-        msleep(1000);
+    if(analog(0) > 3000) {
+        motor(0, -50);
+        msleep(50);
+        while(analog(1) < 3000) {
+            motor(0, 25);
+            msleep(1);
+        }
+        /*msleep(1000);
         while(analog(1) < 1500) {
         	motor(0, 30);
             motor(1, -15);
@@ -164,14 +188,20 @@ void lineSquareUp() {
         while(analog(0) > 1000) {
             motor(0, -20);
             msleep(1);
+        }*/
+    } else if(analog(1) > 3000) {
+        motor(1, -50);
+        msleep(50);
+        while(analog(0) < 3000) {
+            motor(1, 25);
+            msleep(1);
         }
-    } else if(analog(1) > 1200) {
-        msleep(1000);
+        /*msleep(1000);
         while(analog(0) < 1000) {
         	motor(1, 30);
             motor(0, -15);
         	msleep(1);
-        }
+        }*/
     } 
 
     ao();
@@ -196,7 +226,7 @@ drive_until_line(white+469, 20, change);
 */
 
 
-
+    /*
     set_servo_position(2, 644);
 
 
@@ -213,15 +243,17 @@ drive_until_line(white+469, 20, change);
     msleep(500);
     set_servo_position(1, claw_up);
     msleep(500);
+    set_servo_position(3, slap_rest);
+    msleep(500);
 
     //Get the barrel
-    move(100, 420, change);
+    move(100, 380, change);
     ao();
-    //drive_until_line(grey, 50, change);
+    //drive_until_line(0, grey, 50, change);
 
     //lineSquareUp();
-    
-    
+
+
 
     motor(0, -100);
     motor(1, 100);
@@ -231,7 +263,7 @@ drive_until_line(white+469, 20, change);
 
 
     drive_until_line(0, black, 50, change);
-    
+
     move(-50, 300, change);
 
 
@@ -244,9 +276,9 @@ drive_until_line(white+469, 20, change);
 
     move(-75,900, change);
     msleep(1000);
-    
+
     int i = 0;
-       
+
     while(i<3){
         move(75, 50, change);
         msleep(50);
@@ -254,11 +286,18 @@ drive_until_line(white+469, 20, change);
         msleep(50);
         i++;
     }
-	
+
     move(100, 300, change);
     drive_until_line(1, black, 50, change);
+    lineSquareUp();
+    ao();
     msleep(500);
-    move(100, 375, change);
+    move(100, 300, change);
+    ao();
+    //motor(1, -100);
+    //motor(0, 100);
+    //msleep(100);
+    ao();
     set_servo_position(2, miniservo_collect);
     msleep(500);
     set_servo_position(0, claw_open);
@@ -266,15 +305,128 @@ drive_until_line(white+469, 20, change);
     set_servo_position(2, miniservo_up);
     msleep(500);
     pick_up_poms();
+    ao();
+    //motor(1, 100);
+   // motor(0, -100);
+    //msleep(100);
     move(100, 100, change);
-   
+
     motor(1, -100);
 	motor(0, 100);
-    msleep(900);
-    move(-100, 400, change); 
-    //lineFollow(1, 300, black);
+    msleep(980);
+    move(-100, 550, change); 
+ */   
+    //start gwtting rest of poms
+    //move(100, 150, change);
+
+    /*motor(1, 100);
+	motor(0, -100);
+    msleep(300);
+
+    move(100, 200, change);
+
+    motor(1, -100);
+	motor(0, 100);
+    msleep(310); */
+	set_servo_position(0, claw_close);
+    set_servo_position(1, claw_up);
+    move(100, 300, change);
+    motor(1, 100);
+	motor(0, -100);
+    msleep(350);
+    ao();
+    move(100, 170, change);
+    ao();
+    motor(1, -100);
+	motor(0, 100);
+    msleep(350);
+    move(100, 120, change);
+    set_servo_position(1, claw_down-140);
+    set_servo_position(0, claw_open);
+    set_servo_position(2, miniservo_collect);
+    move(100, 1000, change);
+    msleep(500);
+    set_servo_position(1, claw_down);
+    msleep(500);
+    slowservo(0, claw_close);
+    msleep(500);
+    slowservo(1, claw_up);
+    msleep(500);
+    slowservo(0, claw_open);
+    msleep(500);
+    set_servo_position(0, claw_close+300);
+    msleep(500);
+    set_servo_position(1, claw_down);
+    msleep(500);
+    slowservo(2, miniservo_down);
+    msleep(500);
     
-   
+/*
+    int i = 0;
+    for(i = 0; i < 4; i++) {
+        move(100, 600, change);
+        motor(1, 100);
+        motor(0, -100);
+        msleep(225);
+        ao();
+        msleep(300);
+        move(-100, 115, change);
+        int a;
+
+        set_servo_position(2, miniservo_collect);
+        msleep(500);
+
+        set_servo_position(0, claw_open);
+        msleep(200);
+
+        set_servo_position(1, claw_down);
+        msleep(200);
+        if(i = 0) {
+			move(100, 170, change);
+        } else {
+            move(100, 145, change);
+        }
+        set_servo_position(0, claw_close);
+        msleep(200);
+		
+        move(-100, 120, change);
+        
+        slowservo(1, claw_up);
+
+        set_servo_position(0, 800);
+        msleep(200);
+
+        set_servo_position(1, claw_down);
+        msleep(200);
+
+        set_servo_position(1, claw_up+500);
+        msleep(200);
+
+        while(a < 2){
+            slowservo(2, miniservo_down);
+
+            slowservo(2, miniservo_up);
+
+            i++;
+        }
+
+        move(100, 100, change);
+        motor(1, -100);
+        motor(0, 100);
+        msleep(225);
+        ao();
+        msleep(300);
+    }
+
+    /*
+    motor(1, -100);
+	motor(0, 100);
+    msleep(300);
+    ao();
+    */
+    //lineFollow(1, 300, black);
+
+
     //Proceed to get leftmost pile of poms
 
 

@@ -4,7 +4,7 @@
     "Sketch is in the air" - Sketch 100
 	Name:          Camera Test Alex
 	By:            Alex Chang
-	Last Updated:  3/17/19
+	Last Updated:  3/24/19
 
 	PROPRIETARY and CONFIDENTIAL
 ============================================================================
@@ -24,12 +24,12 @@ const int clawOpen = 830;
 const int wristMiddle = 1400;
 const int wristUp = 1200;
 const int wristDown = 2049;
+const int wristBridge = -150;
 
-const int armMiddle = 1650;
-const int armUp = 2700;
-const int armDown = -775;
-
-
+const int armMiddle = 2150;
+const int armUp = 2950;
+const int armDown = -775; //not
+const int armBridge = -50;
 
 void updateCam(){
 	camData[1] = camera_update();
@@ -245,7 +245,7 @@ int main(){
         putDown(armMiddle, wristMiddle);
         //move to spot and stop
     }else{
-        building = 1;
+        /*building = 1;
         
     	move(100, 300, x);						//forward to get away from first building
     	msleep(100);
@@ -254,33 +254,74 @@ int main(){
     	msleep(2200);
         create_stop();
         
-        move_to_position(motorPin, 500, armMiddle);
+        //comment out this block move_to_position(motorPin, 500, armMiddle);
    		msleep(500);
     	set_servo_position(clawPin, clawOpen);
     	msleep(100);
-    	set_servo_position(wristPin, wristMiddle);
+    	set_servo_position(wristPin, wristMiddle);//end of block should be commented out
         
-        move(-100, 1500, x);					//backward to last building
-    	msleep(100);
+        move(-100, 1000, x);					//backward to last building
+        printf("stopping\n");
+    	msleep(300);
+        create_stop();
+        msleep(100);
+        
         
         create_drive_direct(70, -70);			//turn right 90
     	msleep(2200);
         create_stop();
         
-        move(-100, 325, x);						//backward to line up with building
-    	msleep(100);
+        create_drive_direct(-100, -100);
+    	while(get_create_lcliff_amt() > 2200){
+    		create_drive_direct(-100, -100);
+    	}//while loop end							//move to black line second(front of buildings)
+		msleep(75);
+    	create_stop();
         
         pickUp(armMiddle, wristMiddle);
         move(100, 300, x);						//forward to back away from building
     	msleep(200);
         
-        create_drive_direct(70, -70);			//turn right ~160
+        create_drive_direct(70, -70);			//turn left ~160
     	msleep(4000);
     	create_stop();
         
         putDown(armMiddle, wristMiddle);
-		//pick up, turn around, put down, go to spot
-        	
+		//go to spot*/
+        
+        move(100, 175, x);						//forward to get away from first building
+    	msleep(100);
+        
+        create_drive_direct(-70, 70);			//turn left ~140
+    	msleep(3300);
+    	create_stop();
+        
+        set_servo_position(wristPin, 750);		//set wrist angle
+    	msleep(50);
+        set_servo_position(clawPin, clawOpen);			//open claw
+    	msleep(50);
+        //lowering arm
+		move_to_position(motorPin, 500, -100);		//lower arm
+    	msleep(4500);
+        
+        move(100, 50, x);						//forward to create space from yellow cube
+    	msleep(100);
+        
+        int i;
+        for(i = 1; i < 63; i++){
+        	int clawPos = get_servo_position(clawPin);
+    		set_servo_position(clawPin, clawPos - 10);  //close claw
+    		msleep(5);
+    	}//claw close end
+        
+        msleep(300);
+        //moving arm up
+        move_to_position(motorPin, 500, armBridge);
+    	msleep(3000);
+    	set_servo_position(wristPin, wristBridge);
+        
+        msleep(500);
+        
     }//full get botguy if end
     
     disable_servos();

@@ -1,0 +1,354 @@
+//start position 350
+//iCreate GettingWaterCube v4 but better?
+
+#include <kipr/botball.h>
+//Note: some of the numbers for moving are inaccurate
+/*
+Author:Kevin Zhang
+Team: 190510
+Walabi: 3828
+Date Updated: 3/29/2019
+Objective: Assuming we already know which building is burning, get large blue water cube and drive to the burning building
+
+PROPRIETARY AND CONFIDENTIAL All Rights Reserved "Sketch in the Air" 2019
+*/
+
+int gyroCalibrate() {
+    int changeGyroZ = 0;//find average gyro value when still
+    int i = 0;
+    for(i = 0; i < 10000; i++) {
+        changeGyroZ += gyro_z();
+    }
+    changeGyroZ /= 10000;
+    return changeGyroZ;
+}
+
+
+
+void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
+    int i = 0;
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange += gyro_z()-changeGyroZ;
+        create_drive_direct(speed+anglechange/200, speed-anglechange/200);
+        msleep(1);
+    }
+    create_stop();
+}
+
+void linefollow(int speed, int time, int changeGyroZ) {
+    int i = 0;
+    
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange = get_create_rfcliff_amt()-1250;
+        create_drive_direct(speed+anglechange/20, speed-anglechange/20);
+        msleep(1);
+    }
+    create_stop();
+    
+}
+/*
+void turn(int direction, int degree, int changeGyroZ) {
+    int anglechange = 0;
+    int x = degree*110000/90;
+    if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
+    	while(anglechange > -x) {
+        	anglechange += gyro_z()-changeGyroZ;
+            create_drive_direct(100, -100);
+        	msleep(1);
+    	}
+    } else {
+        while(anglechange < x) {
+        	anglechange += gyro_z()-changeGyroZ;
+        	create_drive_direct(-100, 100);
+        	msleep(1);
+    	}
+    }
+    create_stop();
+    msleep(200);
+}
+*/
+const int motorPin = 0;
+const int clawPin = 0;
+const int wristPin = 1;
+
+const int clawClose = 200;
+const int clawOpen = 830;
+const int wristMiddle = 1400;
+const int wristUp = 1600;
+const int armMiddle = 1850;
+const int armUp = 2700;
+const int armPos = 750;
+const int closeservo = 269;
+const int openservo = 1750;
+
+int main()
+{
+    create_connect();
+    int x;
+    const float flatpos = 0.0;
+    move_to_position(0, 100, flatpos);
+    x = gyroCalibrate();
+    
+    /* Alex is doing this part
+    
+    while (!(get_create_rcliff_amt() >= 2200 || get_create_lcliff_amt() >= 2200)) {
+        create_drive_direct(100, 100);
+    }
+    
+    create_drive_direct(-70, 70);      //turn left
+    msleep(4400);
+    enable_servos();
+    set_servo_position(0, clawOpen);
+    msleep(50);
+    set_servo_position(0, clawClose);
+    disable_servos();
+    
+    create_drive_direct(70, -70);     //turn right
+    msleep(2200);
+    
+    msleep(1000);
+    move(-100, 1425, x);
+    msleep(50);
+    create_drive_direct(-70, 70);     //turn left
+    msleep(2200);
+    move(-100, 1450, x);
+    
+    */
+    move_to_position(0, 500, flatpos + 800);
+    enable_servos();     //turning on servos
+    set_servo_position(0, openservo + 500);
+    msleep(1000);
+    set_servo_position(1, 660);
+    msleep(1000);
+    move(200, 25, x);     //move back after Square Up
+    create_drive_direct(70, -70);     //turn right
+    msleep(200);
+    create_drive_direct(70, -70);     //turn right 
+    msleep(1669);
+    //get blue cube
+   	create_stop();
+    move_to_position(0, 600, flatpos + 150);
+    msleep(2000);
+    set_servo_position(0, closeservo - 200);     //close claw
+    msleep(2500);
+    move_to_position(0, 500, flatpos + 2700);
+    msleep(4000);
+    create_drive_direct(70, -70);
+    msleep(2850);
+    set_servo_position(1, wristUp + 400);     //reach up to place
+    create_stop();
+    move_to_position(0, 300, flatpos + 2500);
+    msleep(2000);
+    
+    //int i = 0;
+    int curChange = 0;
+    while(get_create_lcliff_amt() > 1300) {
+        curChange += gyro_z()-x;
+        create_drive_direct(-150+curChange/200, -150-curChange/200);
+        msleep(1);
+    }
+    create_stop();
+    create_drive_direct(-70, 70);
+    msleep(2200);
+    int asdlfj = 3;
+    if(asdlfj == 1) {
+    	linefollow(100, 250, x);
+        create_drive_direct(70, -70);
+    	msleep(2200);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+    } else if(asdlfj == 2) {
+        linefollow(100, 580, x);
+        create_drive_direct(70, -70);
+    	msleep(2300);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+        move(-100, 150, x);
+    } else {
+        linefollow(100, 950, x);
+        create_drive_direct(70, -70);
+    	msleep(2200);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+        move(-100, 100, x);
+    }
+    create_stop();
+    if(asdlfj == 2) {
+        set_servo_position(1, wristMiddle + 200);
+    } else {
+    	set_servo_position(1, wristMiddle - 200);
+    }
+    msleep(1500);
+    ao();
+    
+    
+    //move(-200, 700, x);
+    
+    /*Yikes 1
+    create_drive_direct(70, -70);
+    msleep(2200);
+    move(-200, 250, x);
+    create_drive_direct(-70, 70);     //turn left
+    msleep(2200);
+    */
+    
+   
+    
+    /*
+    move(-100, 750, x);
+    create_drive_direct(70, -70);
+    msleep(2200);     //turn 90?
+    move(100, 450, x);
+    ao();
+    disable_servos();
+    */
+    
+
+
+    //building order is left to right if you stand with your back facing the TV in Henry's house
+
+    /* Cases part
+    
+    int xa = 1;
+    int xb = 0;
+    int xc = 0;
+
+    if (xa == 1) {
+        create_drive_direct(-100, 100);
+        msleep(1400);
+        enable_servos();
+        move_to_position(0, 100, flatpos + 900);
+        set_servo_position(0, openservo);
+        msleep(100);
+        set_servo_position(0, closeservo);
+    }else{
+        if (xb == 1) {
+            move(100, 250, x);
+            create_drive_direct(-100, 100);
+            msleep(1400);
+            move_to_position(0, 100, flatpos + 1200);
+            set_servo_position(0, openservo);
+            msleep(100);
+            set_servo_position(0, closeservo);
+        }else{
+            if (xc == 1) {
+                move(100, 550, x);
+                create_drive_direct(-100, 100);
+                msleep(1400);
+                move_to_position(0, 100, flatpos + 900);
+                set_servo_position(0, openservo);
+                msleep(100);
+                set_servo_position(0, closeservo);
+            }
+            else{
+                printf("wallabys are fuking ghey");
+            }
+            */
+
+
+
+
+			/*
+            if (xa == 1) {
+                create_connect();
+                create_drive_direct(-100, 100);     //turn left 180, assuming the create is facing forward
+                msleep(1400);
+                create_drive_direct(100, 100);
+                msleep(500);
+                create_drive_direct(-100, 100);
+                msleep(1400);
+                while (!get_create_lbump() == 0 || !get_create_rbump() == 0) {
+                    create_drive_direct(170, 170);
+                }
+            }
+            else {
+                if (xb == 1) {
+                    create_drive_direct(-100, 100);
+                    msleep(1400);
+                    create_drive_direct(100, 100);
+                    msleep(1500);
+                    create_drive_direct(-100, 100);
+                    msleep(1400);
+                    while (!get_create_lbump() == 0 || !get_create_rbump() == 0) {
+                        create_drive_direct(170, 170);
+                    }
+                }
+                else {
+                    if (xc == 1) {
+                        create_drive_direct(-100, 100);     //turn left
+                        msleep(1400);
+                        create_drive_direct(100, 100);
+                        msleep(2500);
+                        create_drive_direct(-100, 100);
+                        while (!get_create_lbump() == 0 || !get_create_rbump() == 0) {
+                            create_drive_direct(170, 170);
+                        }
+                    }
+
+                }
+            }
+        }
+        create_drive_direct(100, -100);     //turn right
+        msleep(1400);
+        create_drive_direct(100, 100);     //drive forward to the blue block, distance not tested
+        msleep(2500);
+        create_drive_direct(100, -100);      //turn right 180
+        msleep(2800);
+        create_drive_direct(100, 100);
+        msleep(1500);
+        //while (analog(0) < 2250)     //light sensor port not determined yet
+        //    create_drive_direct(150, 150);
+
+        create_drive_direct(100, -100);
+        msleep(1400);
+        */
+        /*
+xa = 0;     //all buildings set as unburning for now
+xb = 0;     
+xc = 0;
+
+if (xa == 1)     //building 1 
+{
+    create_drive_direct(100, 100);     //distance not tested yet
+    msleep(200);
+    create_stop();
+    create_drive_direct(-100, 100);
+    msleep(1400);     //turn left
+    //place large blue cube
+}
+else {
+    if (xb == 1) {     //building 2
+        create_drive_direct(100, 100);
+        msleep(500);
+        create_stop();
+        create_drive_direct(-100, 100);
+        msleep(1400);     //turn left
+        //place large blue cube
+    }
+    else {
+        if (xc == 1) {     //building 2
+            create_drive_direct(100, 100);
+            msleep(500);
+            create_stop();
+            create_drive_direct(-100, 100);
+            msleep(1400);     //turn left
+            //place large blue cube
+        }
+        else {
+            printf("wtf\n\n\n\n\n");
+        }
+    }
+}
+
+    }
+    */
+    return 0;
+}

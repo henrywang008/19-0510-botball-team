@@ -4,7 +4,7 @@
     "Sketch is in the air" - Sketch 100
 	Name:          Camera Test Alex
 	By:            Alex Chang
-	Last Updated:  3/29/19
+	Last Updated:  3/31/19
 
 	PROPRIETARY and CONFIDENTIAL
 ============================================================================
@@ -26,9 +26,9 @@ const int wristUp = 1200;
 const int wristDown = 2049;
 const int wristBridge = -150;
 
-const int armMiddle = 2150;
+const int armMiddle = 2000;
 const int armUp = 2950;
-const int armDown = -775; //not
+const int armDown = -850;
 const int armBridge = -50;
 
 void updateCam(){
@@ -147,16 +147,7 @@ void turn(int direction, int degree, int changeGyroZ) {
 
 
 
-void pickUp(int armPos, int wristPos){
-	/*move_to_position(motorPin, 1000, armPos);		//set arm height
-    msleep(200);
-    set_servo_position(wristPin, wristPos);			//set wrist angle
-    msleep(50);
-    set_servo_position(clawPin, clawOpen);			//open claw
-    msleep(50);*/
-    
-    //move(100, 100, x);
-    
+void pickUp(int armPos, int wristPos){  
     int i;
     for(i = 1; i < 63; i++){
         int clawPos = get_servo_position(clawPin);
@@ -164,7 +155,7 @@ void pickUp(int armPos, int wristPos){
     	msleep(5);
     }//claw close end
     
-    move_to_position(motorPin, 1000, armPos + 600);	//pick arm up   
+    move_to_position(motorPin, 1000, 2600);	//pick arm up   
     msleep(400);
     
 }//pickUp end
@@ -204,7 +195,7 @@ int main(){
     msleep(5000);
 	//wait for light
     
-    create_drive_direct(75, 210);
+    create_drive_direct(75, 220);
     msleep(500);
     create_stop();
     
@@ -218,22 +209,22 @@ int main(){
     
     
     create_drive_direct(70, -70);			//turn right 90
-    msleep(2100);
+    msleep(2000);
     create_stop();
     
     printf("Moving arm up\n");
     move_to_position(motorPin, 1000, armMiddle);
-    msleep(2200);
+    //msleep(200);
+    if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    	printf("Moving arm up again\n");
+    	move_to_position(motorPin, 1000, armMiddle);
+    	//msleep(200);
+    }//second arm up end
+    
     set_servo_position(wristPin, wristMiddle);
     msleep(100);
     set_servo_position(clawPin, clawOpen);
     msleep(100);
-    
-    if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
-    	printf("Moving arm up again\n");
-    	move_to_position(motorPin, 1000, armMiddle);
-    	msleep(2200);
-    }//second arm up end
     
     create_drive_direct(-100, -100);
     while(get_create_lcliff_amt() > 2200){
@@ -255,55 +246,114 @@ int main(){
         
         putDown(armMiddle, wristMiddle);
         
-        create_drive_direct(70, -70);			//turn right ~20
-    	msleep(500);
+        create_drive_direct(70, -70);			//turn right ~40
+    	msleep(800);
     	create_stop();
-
-        //pick up yellow cube, put on left middle bridge, move to spot and stop
-    }else{
-        /*building = 1;
         
-    	move(100, 300, x);						//forward to get away from first building
-    	msleep(100);
         
-        create_drive_direct(-70, 70);			//turn left 90
+        
+        
+        
+        
+        
+        set_servo_position(wristPin, 550);		//set wrist angle
+    	msleep(50);
+        set_servo_position(clawPin, clawOpen);			//open claw
+    	msleep(50);
+        
+        printf("Moving arm down\n");
+		move_to_position(motorPin, 500, -85);		//lower arm
     	msleep(2200);
-        create_stop();
+        if(get_motor_position_counter(motorPin) < -185 || get_motor_position_counter(motorPin) > -15){
+    		printf("Moving arm down again\n");
+    		move_to_position(motorPin, 500, -75);
+    		msleep(3800);
+    	}//second arm down end
+
+        int i;
+        for(i = 1; i < 63; i++){
+        	int clawPos = get_servo_position(clawPin);
+    		set_servo_position(clawPin, clawPos - 10);  //close claw on yellow cube
+    		msleep(5);
+    	}//claw close end
         
-        //comment out this block move_to_position(motorPin, 500, armMiddle);
-   		msleep(500);
-    	set_servo_position(clawPin, clawOpen);
-    	msleep(100);
-    	set_servo_position(wristPin, wristMiddle);//end of block should be commented out
-        
-        move(-100, 1000, x);					//backward to last building
-        printf("stopping\n");
-    	msleep(300);
-        create_stop();
+        msleep(300);
+        printf("Moving arm up\n");
+        move_to_position(motorPin, 500, armMiddle);
+    	//msleep(200);
+        if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    		printf("Moving arm up again\n");
+    		move_to_position(motorPin, 500, armMiddle);
+    		//msleep(200);
+    	}//second arm up end
+    	set_servo_position(wristPin, wristBridge);
         msleep(100);
+
+        create_drive_direct(-70, 70);			//turn left ~80
+    	msleep(1200);
+    	create_stop();
         
+        move(-100, 800, x);						//backward to back lane
+    	msleep(100);
         
         create_drive_direct(70, -70);			//turn right 90
     	msleep(2200);
-        create_stop();
+    	create_stop();
         
         create_drive_direct(-100, -100);
-    	while(get_create_lcliff_amt() > 2200){
+        msleep(1700);
+    	while(get_create_rcliff_amt() > 2200){
     		create_drive_direct(-100, -100);
-    	}//while loop end							//move to black line second(front of buildings)
-		msleep(75);
+    	}//while loop end						//move to black line on left
     	create_stop();
         
-        pickUp(armMiddle, wristMiddle);
-        move(100, 300, x);						//forward to back away from building
-    	msleep(200);
+        move(100, 70, x);						//forward get away from black line and allign with third building
+    	msleep(100);
         
-        create_drive_direct(70, -70);			//turn left ~160
-    	msleep(4000);
+        create_drive_direct(70, -70);			//turn right ~85
+    	msleep(2150);
     	create_stop();
         
-        putDown(armMiddle, wristMiddle);
-		//go to spot*/
+        create_drive_direct(-100, -100);
+    	while(get_create_rcliff_amt() > 2200){
+    		create_drive_direct(-100, -100);
+    	}//while loop end						//move to black line(front of third building)
+		//msleep(75);
+    	create_stop();
+        
+        //edit above to move shorter
+        //put yellow cube on middle left bridge
+        //move up to building
+        
+        if(findObject() == 1){
+        	building == 2;
+            
+            //go to position
+            
+        }else{
+        	building == 3;
+            
+            //pick up botgurl, put in start zone, go to position
+            
+        }//else end
+        
+        
+        
+        
+        //put on left middle bridge, move to spot and stop
+    }else{
+        
+        
+        
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        
+        
+        
+        building = 1;
         
         move(100, 175, x);						//forward to get away from first building
     	msleep(100);
@@ -316,19 +366,16 @@ int main(){
     	msleep(50);
         set_servo_position(clawPin, clawOpen);			//open claw
     	msleep(50);
+        
         printf("Moving arm down\n");
 		move_to_position(motorPin, 500, -100);		//lower arm
-    	msleep(4500);
-        
+    	msleep(2200);
         if(get_motor_position_counter(motorPin) < -200 || get_motor_position_counter(motorPin) > 0){
     		printf("Moving arm down again\n");
     		move_to_position(motorPin, 500, -100);
-    		msleep(4500);
+    		msleep(3800);
     	}//second arm down end
-        
-        //move(100, 50, x);						//forward to create space from yellow cube
-    	//msleep(100);
-        
+
         int i;
         for(i = 1; i < 63; i++){
         	int clawPos = get_servo_position(clawPin);
@@ -339,11 +386,11 @@ int main(){
         msleep(300);
         printf("Moving arm up\n");
         move_to_position(motorPin, 500, armBridge);
-    	msleep(3000);
+    	//msleep(200);
         if(get_motor_position_counter(motorPin) < armBridge - 100 || get_motor_position_counter(motorPin) > armBridge + 100){
     		printf("Moving arm up again\n");
     		move_to_position(motorPin, 500, armBridge);
-    		msleep(3000);
+    		//msleep(200);
     	}//second arm up end
     	set_servo_position(wristPin, wristBridge);
         
@@ -353,23 +400,45 @@ int main(){
     	create_stop();
         
         printf("Moving arm down");
-        move_to_position(motorPin, 500, -600);
+        move_to_position(motorPin, 500, -1100);
         msleep(2000);
-        if(get_motor_position_counter(motorPin) < -600 || get_motor_position_counter(motorPin) > -400){
+        if(get_motor_position_counter(motorPin) < -1200 || get_motor_position_counter(motorPin) > -1000){
     		printf("Moving arm down again\n");
-    		move_to_position(motorPin, 500, -600);
+    		move_to_position(motorPin, 500, -1100);
     		msleep(2000);
     	}//second arm down end
         
         set_servo_position(clawPin, clawOpen);
-        msleep(200);
+        //msleep(50);
+        
+        printf("Moving arm up a little");
+        move_to_position(motorPin, 500, -700);
+        msleep(800);
+        if(get_motor_position_counter(motorPin) < -800 || get_motor_position_counter(motorPin) > -600){
+    		printf("Moving arm up a little again\n");
+    		move_to_position(motorPin, 500, -700);
+    		msleep(800);
+    	}//second arm down end
+        
         set_servo_position(clawPin, clawClose);
+        msleep(200);
+        
+        printf("Moving arm up");
+        move_to_position(motorPin, 500, armMiddle);
+        msleep(200);
+        if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    		printf("Moving arm up again\n");
+    		move_to_position(motorPin, 500, armMiddle);
+    		msleep(200);
+    	}//second arm down end
+        
+        //set_servo_position(clawPin, clawClose);
         
         create_drive_direct(70, -70);			//turn right ~150
     	msleep(4000);
     	create_stop();
         
-        move(100, 1750, x);
+        move(-100, 950, x);						//move away from building to back row
         msleep(100);
         
         create_drive_direct(70, -70);			//turn right 90
@@ -377,14 +446,16 @@ int main(){
     	create_stop();
         
         create_drive_direct(-100, -100);
-        msleep(1000);
-    	while(get_create_lcliff_amt() > 2200){
+        msleep(1700);
+    	while(get_create_rcliff_amt() > 2200){
     		create_drive_direct(-100, -100);
-    	}//while loop end							//move to black line second(front of buildings)
-		msleep(75);
+    	}//while loop end						//move to black line on left, position
+		msleep(1800);
     	create_stop();
         
-        //move to spot
+        create_drive_direct(-70, 70);			//turn left 90
+    	msleep(2200);
+    	create_stop();
         
         msleep(500);
         

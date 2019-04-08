@@ -1,0 +1,162 @@
+//start position 350
+//iCreate GettingWaterCube v4 but better?
+
+#include <kipr/botball.h>
+//Note: some of the numbers for moving are inaccurate
+/*
+Author:Kevin Zhang
+Team: 190510
+Walabi: 3828
+Date Updated: 3/29/2019
+Objective: Assuming we already know which building is burning, get large blue water cube and drive to the burning building
+
+PROPRIETARY AND CONFIDENTIAL All Rights Reserved "Sketch in the Air" 2019
+*/
+
+int gyroCalibrate() {
+    int changeGyroZ = 0;//find average gyro value when still
+    int i = 0;
+    for(i = 0; i < 10000; i++) {
+        changeGyroZ += gyro_z();
+    }
+    changeGyroZ /= 10000;
+    return changeGyroZ;
+}
+
+
+
+void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
+    int i = 0;
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange += gyro_z()-changeGyroZ;
+        create_drive_direct(speed+anglechange/200, speed-anglechange/200);
+        msleep(1);
+    }
+    create_stop();
+}
+
+void linefollow(int speed, int time, int changeGyroZ) {
+    int i = 0;
+    
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange = get_create_rfcliff_amt()-1250;
+        create_drive_direct(speed+anglechange/15, speed-anglechange/15);
+        msleep(1);
+    }
+    create_stop();
+    
+}
+const int motorPin = 0;
+const int clawPin = 0;
+const int wristPin = 1;
+
+const int clawClose = 200;
+const int clawOpen = 830;
+const int wristMiddle = 1400;
+const int wristUp = 1600;
+const int armMiddle = 1850;
+const int armUp = 2700;
+const int armPos = 750;
+const int closeservo = 269;
+const int openservo = 1750;
+
+int main()
+{
+    create_connect();
+    int x;
+    x = gyroCalibrate();
+    int building = 1;
+    
+    const float flatpos = 0.0;
+    move_to_position(0, 100, flatpos);
+    
+    
+    move_to_position(0, 500, flatpos + 800);
+    enable_servos();     //turning on servos
+    set_servo_position(0, openservo + 500);
+    msleep(1000);
+    set_servo_position(1, 660);
+    msleep(1000);
+    move(200, 25, x);     //move back after Square Up
+    create_drive_direct(70, -70);     //turn right
+    msleep(200);
+    create_drive_direct(70, -70);     //turn right 
+    msleep(1669);
+    //get blue cube
+   	create_stop();
+    move_to_position(0, 600, flatpos + 150);
+    msleep(2000);
+    set_servo_position(0, closeservo - 200);     //close claw
+    msleep(500);
+    move_to_position(0, 500, flatpos + 2700);
+    msleep(4000);
+    create_drive_direct(70, -70);
+    msleep(2850);
+    set_servo_position(1, wristUp + 400);     //reach up to place
+    create_stop();
+    move_to_position(0, 300, flatpos + 2500);
+    msleep(2000);
+    
+    //int i = 0;
+    int curChange = 0;
+    while(get_create_lcliff_amt() > 1300) {
+        curChange += gyro_z()-x;
+        create_drive_direct(-150+curChange/200, -150-curChange/200);
+        create_drive_direct(-100, -100);
+        msleep(1);
+    }
+    create_stop();
+    create_drive_direct(-70, 70);
+    msleep(2200);
+    if(building == 1) {
+    	linefollow(100, 1050, x);
+        create_drive_direct(70, -70);
+    	msleep(2200);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+    } else if(building == 2) {
+        linefollow(100, 580, x);
+        create_drive_direct(70, -70);
+    	msleep(2300);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+        create_drive_direct(-70, 70);
+        msleep(100);
+        move(-100, 160, x);
+    } else {
+        linefollow(100, 250, x);
+        create_drive_direct(70, -70);
+    	msleep(2200);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+        move(-100, 75, x);
+    }
+    create_stop();
+    if(building == 2) {
+        set_servo_position(1, wristMiddle + 200);
+    } else {
+    	set_servo_position(1, wristMiddle - 350);
+    }
+    create_drive_direct(-70, 70);
+    msleep(100);
+    create_drive_direct(-70, 70);
+    msleep(100);
+    create_drive_direct(70, -70);
+    msleep(100);
+    create_drive_direct(-70, 70);
+    msleep(100);
+    create_stop();
+    ao();
+    
+    
+    
+    return 0;
+}

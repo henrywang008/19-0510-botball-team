@@ -1,0 +1,724 @@
+/*
+==========================================================================
+MergeCode v2
+============================================================================
+*/
+#include <kipr/botball.h>
+int camData[4];
+int x;
+int building;
+
+const int motorPin = 0;
+const int clawPin = 0;
+const int wristPin = 1;
+
+const int clawClose = 200;
+const int clawOpen = 830;
+
+const int wristMiddle = 1400;
+const int wristUp = 1200;
+const int wristDown = 2049;
+const int wristBridge = -150;
+
+const int armMiddle = 1800; 
+const int armUp = 2950;
+const int armDown = -1700; 
+const int armBridge = -50;
+
+const int armPos = 750;
+const int closeservo = 269;
+const int openservo = 1750;
+
+void linefollow(int speed, int time, int changeGyroZ) {
+    int i = 0;
+    
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange = get_create_rfcliff_amt()-1250;
+        create_drive_direct(speed+anglechange/15, speed-anglechange/15);
+        msleep(1);
+    }
+    create_stop();
+    
+}
+
+void updateCam(){
+	camData[1] = camera_update();
+    camData[2] = get_object_count(0);
+    if(camData[2] > 0){
+    	camData[3] = get_object_center_x(0, camData[2]-1);
+    	camData[4] = get_object_center_y(0, camData[2]-1);
+        printf("Camera Update: %d, Objects: %d, x: %d, y: %d ", camData[1], camData[2], camData[3], camData[4]); 
+    }else{
+    	printf("Camera Update: %d, Objects: %d ", camData[1], camData[2]);  
+    }//if else end
+}//updateCam end
+
+
+
+void openCam(){
+	int open = camera_open_black();
+	
+    if(open == 1){
+        printf("Successfully opened\n");
+        int channel = get_channel_count();
+    	printf("Channel amount is :%d\n\n", channel);
+    }else if(open == 0){
+        printf("Failed to open\n");
+        msleep(500);
+        openCam();
+    }//opening if else end
+
+}//openCam end
+
+
+
+int findObject(){
+	int i, objects, final, av = 0;  
+    final = 0;
+    
+    for(i = 1; i <= 50; i++){
+    	updateCam();
+        printf("EMPTY\n");
+    }//empty for end
+    
+    for(i = 1; i <= 20; i++){
+        updateCam();
+        objects = camData[2];
+        if(objects > 0){
+            printf("Item detected\n");
+            final++;
+            av = av + objects;
+        }else{
+            printf("Item not detected\n");
+        }//Objects if else end
+        msleep(20);
+    }//for end
+    
+    if(final > 0){
+    	av = av/final;
+    }else{
+    	av = 0;
+    }//else end
+    printf("Successes: %d, Average: %d\n", final, av);
+    
+    if(final >= 15){
+    	return 1;
+    }else{
+    	return 0;
+    }//else end
+}//findObject end
+
+
+
+int gyroCalibrate() {
+    int changeGyroZ = 0;//find average gyro value when still
+    int i = 0;
+    for(i = 0; i < 10000; i++) {
+        changeGyroZ += gyro_z();
+    }
+    changeGyroZ /= 10000;
+   	return changeGyroZ;
+}
+
+
+
+void move(int speed, int time, int changeGyroZ) {//speed -100 to 100, time is in miliseconds
+    int i = 0;
+    int anglechange = 0;
+    for(i = 0; i < time; i++) {//gyro move
+        anglechange += gyro_z()-changeGyroZ;
+        create_drive_direct(speed+anglechange/200, speed-anglechange/200);
+        msleep(1);
+    }
+    create_stop();
+}
+
+
+
+void turn(int direction, int degree, int changeGyroZ) {
+    int anglechange = 0;
+    int x = degree*110000/90;
+    if(direction == 1) { // 1 = clockwise, 0 = counter-clockwise
+    	while(anglechange > -x) {
+        	anglechange += gyro_z()-changeGyroZ;
+            create_drive_direct(100, -100);
+        	msleep(1);
+    	}
+    } else {
+        while(anglechange < x) {
+        	anglechange += gyro_z()-changeGyroZ;
+        	create_drive_direct(-100, 100);
+        	msleep(1);
+    	}
+    }
+    create_stop();
+    msleep(200);
+}
+
+
+
+void pickUp(int armPos, int wristPos){  
+    int i;
+    for(i = 1; i < 63; i++){
+        int clawPos = get_servo_position(clawPin);
+    	set_servo_position(clawPin, clawPos - 10);  //close claw
+    	msleep(5);
+    }//claw close end
+    
+    printf("Moving arm up\n");
+    move_to_position(motorPin, 1000, 2600);	//pick arm up   
+    msleep(400);
+    if(get_motor_position_counter(motorPin) < 2500 || get_motor_position_counter(motorPin) > 2700){
+    		printf("Moving arm up again\n");
+    		move_to_position(motorPin, 500, 2700);
+    		msleep(400);
+    	}//second arm down end
+    
+}//pickUp end
+
+
+void putDown(int armPos, int wristPos){
+    set_servo_position(wristPin, wristDown);		//set wrist angle
+    msleep(50);
+    
+    printf("Moving arm down\n");
+	move_to_position(motorPin, 1000, armDown);		//lower arm
+    msleep(4500);
+    if(get_motor_position_counter(motorPin) < armDown - 100 || get_motor_position_counter(motorPin) > armDown + 100){
+    	printf("Moving arm down again\n");
+    	move_to_position(motorPin, 1000, armDown);
+    	msleep(5100);
+    }//second arm up end
+    
+    set_servo_position(clawPin, clawOpen);			//open claw
+    msleep(50);
+	
+	
+    printf("Moving arm up\n");
+	move_to_position(motorPin, 1000, armPos);		//lower arm
+    msleep(5000);
+    if(get_motor_position_counter(motorPin) < armPos - 100 || get_motor_position_counter(motorPin) > armPos + 100){
+    	printf("Moving arm up again\n");
+    	move_to_position(motorPin, 1000, armPos);
+    	msleep(5500);
+    }//second arm up end
+    set_servo_position(wristPin, wristPos);			//set wrist ange
+    msleep(50);
+    
+}//putDown end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int main(){
+    x = gyroCalibrate();
+    enable_servos();
+    create_connect();
+    openCam();
+    
+    set_servo_position(clawPin, clawClose);
+    set_servo_position(wristPin, 0);
+    msleep(100);
+    printf("Moving arm down\n");
+    move_to_position(motorPin, 500, 0);
+    msleep(500);
+    
+   
+	wait_for_light(0);
+    //msleep(5000);
+    shut_down_in(119);
+    
+    create_drive_direct(75, 220);
+    msleep(500);
+    create_stop();
+    
+    create_drive_direct(300, 300);
+    while(get_create_rcliff_amt() > 2200){
+    	create_drive_direct(300, 300);		//move to black line first
+    }//while loop end
+    create_stop();
+    move(100, 100, x);
+    msleep(100);
+    
+    
+    create_drive_direct(70, -70);			//turn right 90
+    msleep(2000);
+    create_stop();
+    
+    printf("Moving arm up\n");
+    move_to_position(motorPin, 1000, armMiddle);
+    //msleep(200);
+    if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    	printf("Moving arm up again\n");
+    	move_to_position(motorPin, 1000, armMiddle);
+    	//msleep(200);
+    }//second arm up end
+    
+    set_servo_position(wristPin, wristMiddle);
+    msleep(100);
+    set_servo_position(clawPin, clawOpen);
+    msleep(100);
+    
+    create_drive_direct(-300, -300);
+    while(get_create_lcliff_amt() > 2200){
+    	create_drive_direct(-300, -300);
+    }//while loop end							//move to black line second(front of buildings)
+	//msleep(75);
+    create_stop();
+    
+    
+    
+    
+    
+    
+    
+    if(findObject() == 0){
+        building = 0;
+    	pickUp(armMiddle, wristMiddle);
+        move(100, 300, x);						//forward to back away from building
+    	msleep(200);
+        
+        create_drive_direct(-70, 70);			//turn left ~160
+    	msleep(4000);
+    	create_stop();
+        
+        putDown(armMiddle, wristMiddle);
+        
+        create_drive_direct(70, -70);			//turn right ~50
+    	msleep(1050); 
+    	create_stop();
+        
+        printf("Moving arm down\n");
+		move_to_position(motorPin, 500, -50);		//lower arm
+    	msleep(2000);
+        if(get_motor_position_counter(motorPin) < -150 || get_motor_position_counter(motorPin) > 50){
+    		printf("Moving arm down again\n");
+    		move_to_position(motorPin, 500, -50);
+    		msleep(3200);
+    	}//second arm down end
+        
+        
+        set_servo_position(clawPin, clawOpen);			//open claw
+    	msleep(50);
+        set_servo_position(wristPin, 600);		//set wrist angle
+    	msleep(400);
+        
+        int i;
+        for(i = 1; i < 63; i++){
+        	int clawPos = get_servo_position(clawPin);
+    		set_servo_position(clawPin, clawPos - 10);  //close claw on yellow cube
+    		msleep(5);
+    	}//claw close end
+        
+        msleep(300);
+        printf("Moving arm up\n");
+        move_to_position(motorPin, 500, armMiddle);
+    	//msleep(200);
+        if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    		printf("Moving arm up again\n");
+    		move_to_position(motorPin, 500, armMiddle);
+    		//msleep(200);
+    	}//second arm up end
+    	set_servo_position(wristPin, wristBridge);
+        msleep(100);
+
+        create_drive_direct(-70, 70);			//turn left ~80
+    	msleep(1400);
+    	create_stop();
+        
+        move(-100, 400, x);						//backward to back lane
+    	msleep(100);
+        
+        create_drive_direct(70, -70);			//turn right < 90
+    	msleep(2120);
+    	create_stop();
+        
+        create_drive_direct(-300, -300);
+        msleep(500);
+    	while(get_create_rcliff_amt() > 2200){
+    		create_drive_direct(-100, -100);
+    	}//while loop end						//move to black line on left
+    	create_stop();
+        move(-100, 100, x);
+        msleep(100);
+        
+        move(100, 70, x);						//forward get away from black line and allign with third building
+    	msleep(100);
+        
+        create_drive_direct(70, -70);			//turn right < 90
+    	msleep(2150);
+    	create_stop();
+        
+        create_drive_direct(-300, -300);
+    	msleep(500);
+    	while(get_create_rcliff_amt() > 2200){
+    		create_drive_direct(-300, -300);
+    	}//while loop end						//move to black line(front of third building)
+		//msleep(75);
+    	create_stop();
+       	
+        
+        
+        
+        
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        //SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME SECOND CONDITION OF FIRST OUTCOME
+        
+        
+        
+        
+        
+        if(findObject() == 1){
+        	building = 3;
+            
+            move(100, 260, x);						//forward to get away from building
+    		msleep(200);
+            
+            create_drive_direct(-70, 70);			//turn to get yellow cube above left bridge
+        	msleep(500);
+        	create_stop();
+        	
+        	printf("Moving arm down\n");
+        	move_to_position(motorPin, 500, -1300); 
+        	msleep(4000);
+        	if(get_motor_position_counter(motorPin) < -1300 || get_motor_position_counter(motorPin) > -1100){
+    			printf("Moving arm down again\n");
+    			move_to_position(motorPin, 500, -1300);
+    			msleep(6000);
+    		}//second arm down end
+        	
+        	set_servo_position(clawPin, clawOpen);
+        	
+        	printf("Moving arm up a little\n");
+        	move_to_position(motorPin, 500, -700);
+        	msleep(800);
+        	if(get_motor_position_counter(motorPin) < -800 || get_motor_position_counter(motorPin) > -600){
+    			printf("Moving arm up a little again\n");
+    			move_to_position(motorPin, 500, -700);
+    			msleep(800);
+    		}//second arm down end
+        	
+        	set_servo_position(clawPin, clawClose);
+        	msleep(200);
+        	
+        	printf("Moving arm up\n");
+        	move_to_position(motorPin, 500, armMiddle);
+        	//msleep(4000);
+        	if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    			printf("Moving arm up again\n");
+    			move_to_position(motorPin, 500, armMiddle);
+    			//msleep(4000);
+    		}//second arm down end
+        	
+        	create_drive_direct(-70, 70);				//turn perpindicular to back
+        	msleep(1700);
+        	create_stop();
+            
+            set_servo_position(wristPin, wristMiddle);
+            
+            move(-100, 400, x);							//backward to allign with position
+    		msleep(200);
+            
+            create_drive_direct(-70, 70);				//turn left ~100
+        	msleep(2350);
+        	create_stop();
+            
+        	move(-100, 1170, x);						//backward to get to position
+    		msleep(200);
+
+            
+        }else{
+        	building = 2;
+            
+            set_servo_position(clawPin, clawOpen);
+            msleep(200);
+            set_servo_position(wristPin, wristMiddle);
+            msleep(200);
+            
+            pickUp(armMiddle, wristMiddle);
+        	move(100, 300, x);						//forward to back away from building
+    		msleep(200);
+        	
+        	create_drive_direct(70, -70);			//turn right ~140
+    		msleep(3600);
+    		create_stop();
+        	
+        	putDown(armMiddle, wristMiddle);
+            
+            create_drive_direct(-70, 70);			//turn left ~50
+    		msleep(1400);
+    		create_stop();
+            
+        	move(100, 400, x);						//forward to allign with position
+    		msleep(200);
+            
+            create_drive_direct(70, -70);			//turn right < 90
+    		msleep(2220);
+    		create_stop();
+            
+            move(-100, 1100, x);					//backward to position
+    		msleep(200);
+            
+        }//else end
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    }else{
+        
+        
+        
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        //IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE, IF SPLIT HERE
+        
+        
+        
+        building = 1;
+        
+        move(100, 175, x);						//forward to get away from first building
+    	msleep(100);
+        
+        create_drive_direct(-70, 70);			//turn left ~140
+    	msleep(3300);
+    	create_stop();
+        
+        set_servo_position(wristPin, 800);		//set wrist angle
+    	msleep(50);
+        set_servo_position(clawPin, clawOpen);			//open claw
+    	msleep(50);
+        
+        printf("Moving arm down\n");
+		move_to_position(motorPin, 500, -150);		//lower arm
+    	msleep(2000); //test
+        if(get_motor_position_counter(motorPin) < -250 || get_motor_position_counter(motorPin) > -50){
+    		printf("Moving arm down again\n");
+    		move_to_position(motorPin, 500, -150);
+    		msleep(4000);
+    	}//second arm down end
+
+        int i;
+        for(i = 1; i < 63; i++){
+        	int clawPos = get_servo_position(clawPin);
+    		set_servo_position(clawPin, clawPos - 10);  //close claw on yellow cube
+    		msleep(5);
+    	}//claw close end
+        
+        msleep(300);
+        
+        printf("Moving arm up\n");
+        move_to_position(motorPin, 500, armBridge);
+    	//msleep(200);
+        if(get_motor_position_counter(motorPin) < armBridge - 100 || get_motor_position_counter(motorPin) > armBridge + 100){
+    		printf("Moving arm up again\n");
+    		move_to_position(motorPin, 500, armBridge);
+    		//msleep(200);
+    	}//second arm up end
+    	set_servo_position(wristPin, wristBridge);
+        
+        
+        create_drive_direct(-70, 70);			//turn left ~190
+    	msleep(5000);
+    	create_stop();
+        
+        printf("Moving arm down\n");
+        move_to_position(motorPin, 500, -1100);
+        msleep(2000);
+        if(get_motor_position_counter(motorPin) < -1200 || get_motor_position_counter(motorPin) > -1000){
+    		printf("Moving arm down again\n");
+    		move_to_position(motorPin, 500, -1100);
+    		msleep(2700);
+    	}//second arm down end
+        
+        set_servo_position(clawPin, clawOpen);
+        //msleep(50);
+        
+        printf("Moving arm up a little\n");
+        move_to_position(motorPin, 500, -700);
+        msleep(800);
+        if(get_motor_position_counter(motorPin) < -800 || get_motor_position_counter(motorPin) > -600){
+    		printf("Moving arm up a little again\n");
+    		move_to_position(motorPin, 500, -700);
+    		msleep(800);
+    	}//second arm down end
+        
+        set_servo_position(clawPin, clawClose);
+        msleep(200);
+        
+        printf("Moving arm up\n");
+        move_to_position(motorPin, 500, armMiddle);
+        msleep(200);
+        if(get_motor_position_counter(motorPin) < armMiddle - 100 || get_motor_position_counter(motorPin) > armMiddle + 100){
+    		printf("Moving arm up again\n");
+    		move_to_position(motorPin, 500, armMiddle);
+    		msleep(200);
+    	}//second arm down end
+        
+        //set_servo_position(clawPin, clawClose);
+        
+        create_drive_direct(70, -70);			//turn right ~150
+    	msleep(4000);
+    	create_stop();
+        
+        move(-100, 600, x);						//move away from building to back row
+        msleep(100);
+        
+        create_drive_direct(70, -70);			//turn right 90
+    	msleep(2200);
+    	create_stop();
+        
+        create_drive_direct(-300, -300);
+        msleep(100);
+    	while(get_create_rcliff_amt() > 2200){
+    		create_drive_direct(-100, -100);
+    	}//while loop end						//move to black line on left, position
+		msleep(1800);
+    	create_stop();
+        
+        create_drive_direct(-70, 70);			//turn left 90
+    	msleep(2200);
+    	create_stop();
+        
+        move(-100, 750, x);						//move backward to final position
+        msleep(100);
+        
+    }//full get botguy if end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    const float flatpos = 0.0;
+    move_to_position(0, 100, flatpos);
+    
+    
+    move_to_position(0, 500, flatpos + 800);
+    enable_servos();     //turning on servos
+    set_servo_position(0, openservo + 500);
+    msleep(1000);
+    set_servo_position(1, 660);
+    msleep(1000);
+    move(200, 25, x);     //move back after Square Up
+    create_drive_direct(70, -70);     //turn right
+    msleep(200);
+    create_drive_direct(70, -70);     //turn right 
+    msleep(1669);
+    //get blue cube
+   	create_stop();
+    move_to_position(0, 600, flatpos + 150);
+    msleep(2000);
+    set_servo_position(0, closeservo - 200);     //close claw
+    msleep(500);
+    move_to_position(0, 500, flatpos + 2700);
+    msleep(4000);
+    create_drive_direct(70, -70);
+    msleep(2700);
+    set_servo_position(1, wristUp + 400);     //reach up to place
+    create_stop();
+    move_to_position(0, 300, flatpos + 2500);
+    msleep(2000);
+    
+    //int i = 0;
+    int curChange = 0;
+    while(get_create_lcliff_amt() > 1200) {
+        curChange += gyro_z()-x;
+        create_drive_direct(-150+curChange/200, -150-curChange/200);
+        create_drive_direct(-100, -100);
+        msleep(1);
+    }
+    create_stop();
+    create_drive_direct(-70, 70);
+    msleep(2300);
+    if(building == 1) {
+    	linefollow(100, 1050, x);
+        create_drive_direct(70, -70);
+    	msleep(2200);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+    } else if(building == 2) {
+        linefollow(100, 580, x);
+        create_drive_direct(70, -70);
+    	msleep(2300);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+        create_drive_direct(-70, 70);
+        msleep(100);
+        move(-100, 160, x);
+    } else {
+        linefollow(100, 250, x);
+        create_drive_direct(70, -70);
+    	msleep(2200);
+        create_drive_direct(100, 100);
+        msleep(200);
+        create_drive_direct(-100, -100);
+        msleep(300);
+        move(-100, 75, x);
+    }
+    create_stop();
+    if(building == 2) {
+        set_servo_position(1, wristMiddle + 200);
+    } else {
+    	set_servo_position(1, wristMiddle - 350);
+    }
+    create_drive_direct(-70, 70);
+    msleep(100);
+    create_drive_direct(-70, 70);
+    msleep(100);
+    create_drive_direct(70, -70);
+    msleep(100);
+    create_drive_direct(-70, 70);
+    msleep(100);
+    create_stop();
+    ao();
+    
+    
+    
+    
+    
+    
+    
+    
+    disable_servos();
+    create_disconnect();
+    camera_close();
+	return 0;
+}

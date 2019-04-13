@@ -598,7 +598,7 @@ int main(){
     	create_stop();
         
         create_drive_direct(-300, -300);
-        msleep(100);
+        msleep(1000);
     	while(get_create_rcliff_amt() > 2200){
     		create_drive_direct(-100, -100);
     	}//while loop end						//move to black line on left, position

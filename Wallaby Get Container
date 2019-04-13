@@ -178,9 +178,9 @@ int pick_up_poms()
 
     while(i < 2){
         slowservo(2, miniservo_down);
-		msleep(200);
+        msleep(200);
         slowservo(2, miniservo_up);
-		msleep(200);
+        msleep(200);
         i++;
     }
 
@@ -258,6 +258,9 @@ void slap() {
 int main()
 {
     //start centered on pipe connectors
+    //wait_for_light(2);
+    shut_down_in(119);
+   	msleep(5000);
     int change = gyrocalibrate();
     enable_servos();
     /*
@@ -266,7 +269,7 @@ drive_until_line(white+469, 20, change);
 */
 
 
-    
+
     set_servo_position(2, miniservo_up);
     msleep(100);
     set_servo_position(1, claw_up);
@@ -275,13 +278,13 @@ drive_until_line(white+469, 20, change);
     msleep(100);
     set_servo_position(3, 300);
     msleep(100);
-    
-    
+
+
     // THIS IS WHERE LIGHT START AND WAIT FOR LIGHT HAPPENS
-    
-    
-    
-    
+
+
+
+
     //Get the first pom
     set_servo_position(0, claw_open);
     msleep(500);
@@ -294,7 +297,7 @@ drive_until_line(white+469, 20, change);
 
 
     //Get the barrel
-    move(100, 350, change);
+    move(100, 150, change);
     ao();
 
 
@@ -302,10 +305,17 @@ drive_until_line(white+469, 20, change);
 
     motor(0, -100);
     motor(1, 100);
-    msleep(900);
+    msleep(450);// was 900
+    
+    move(100, 400, change);
+    msleep(1000);
+    
+    motor(0, -100);
+    motor(1, 100);
+    msleep(450);
 
     move(100,731, change);
-	msleep(1000);
+    msleep(1000);
 
     drive_until_line(0, black, 50, change);
 
@@ -316,7 +326,7 @@ drive_until_line(white+469, 20, change);
     motor(1, -100);
     msleep(920);
     ao();
-   // lineSquareUp();
+    // lineSquareUp();
 
 
     move(-100, 600, change);
@@ -337,15 +347,15 @@ drive_until_line(white+469, 20, change);
     //lineSquareUp();
     ao();
     msleep(200);
-    move(100, 175, change); 
+    move(100, 190, change); 
     ao();
-    
-    
+
+
     motor(1, -100);
     motor(0, 100);
     msleep(50);
-    
-    
+
+
     ao();
     /*set_servo_position(2, miniservo_collect);
     msleep(500);*/
@@ -363,11 +373,11 @@ drive_until_line(white+469, 20, change);
     move(100, 70, change);
 
     motor(1, -100);
-	motor(0, 100);
+    motor(0, 100);
     msleep(950);
-    
+
     move(-100, 200, change);
-/*    int a = 0;
+    /*    int a = 0;
     for(a = 0; a < 4; a++) {
         motor(0, -100);
     	motor(1, 50);
@@ -381,15 +391,16 @@ drive_until_line(white+469, 20, change);
     */
     move(-100, 100, change);
     i = 0;
-    while(i<4){//little square up
+    /*   while(i<4){//little square up
         move(75, 50, change);
         msleep(50);
         move(-100, 75, change);
         msleep(50);
         i++;
     }
+    */
     move(-100, 150, change);
-   	msleep(50);
+    msleep(50);
     //start getting rest of poms
     //move(100, 150, change);
 
@@ -409,18 +420,18 @@ drive_until_line(white+469, 20, change);
     set_servo_position(1, claw_up);
     msleep(2000);
     move(100, 200, change);
-    
+
     motor(1, 100);
     motor(0, -100);
     msleep(340);
-    
-    move(100, 150, change);
-    
+
+    move(100, 190, change);
+
     motor(1, -100);
     motor(0, 100);
     msleep(340);
-    
-    
+
+
 
     //--------------------------this is the small adjust, but we don't seem to need it
     /*motor(1, 100);//adjust
@@ -432,12 +443,12 @@ drive_until_line(white+469, 20, change);
     motor(1, -100);
     motor(0, 100);
     msleep(370);*/
-    
+
     //motor(1, -100);//----------------------------this is the thing that replaces the above adjust
     //motor(0, 100);
     //msleep(90);
     move(100, 150, change);
-    
+
 
     int theangle = 0;
     set_servo_position(1, claw_down-160);
@@ -465,9 +476,9 @@ drive_until_line(white+469, 20, change);
     msleep(300);
     slap();
 
-    motor(0, 100);
-    motor(1, -100);
-    msleep(90);
+    //motor(0, 100);
+    //motor(1, -100);
+    //msleep(90);
     theangle = movetwo(100, 500, change, theangle);
     msleep(100);
     ao();
@@ -493,7 +504,7 @@ drive_until_line(white+469, 20, change);
     //msleep(300);
     slap();
 
-	motor(1, -100);
+    motor(1, -100);
     motor(0, 100);
     msleep(90);
     theangle = movetwo(100, 700, change, theangle);
@@ -501,38 +512,62 @@ drive_until_line(white+469, 20, change);
     int asdlfkjlaksdflkajsdlkjadsff;
     for(asdlfkjlaksdflkajsdlkjadsff = 0; asdlfkjlaksdflkajsdlkjadsff < 2; asdlfkjlaksdflkajsdlkjadsff++) {
         slowerservo(0, claw_close);
-    	msleep(200);
-    	slowservo(1, claw_up);
-    	msleep(200);
-    	slowerservo(0, claw_open+100);
-    	msleep(200);
-    	set_servo_position(0, claw_close+600);
-    	msleep(500);
-    	set_servo_position(1, claw_down);
-    	msleep(500);
-    	slowservo(2, miniservo_down);
-    	slowservo(2, miniservo_up);
+        msleep(200);
+        slowservo(1, claw_up);
+        msleep(200);
+        slowerservo(0, claw_open+100);
+        msleep(200);
+        set_servo_position(0, claw_close+600);
+        msleep(500);
+        set_servo_position(1, claw_down);
+        msleep(500);
         slowservo(2, miniservo_down);
-    	slowservo(2, miniservo_up);
+        slowservo(2, miniservo_up);
+        slowservo(2, miniservo_down);
+        slowservo(2, miniservo_up);
         //slowservo(2, miniservo_down);
         msleep(1000);
-    	set_servo_position(0, claw_open);
-    	msleep(300);
-    	slap();
+        set_servo_position(0, claw_open);
+        msleep(300);
+        if( i == 0) {
+            slap();
+        } else {
+            set_servo_position(3, 2040);
+            msleep(300);
+            set_servo_position(3, 1500);
+            msleep(300);
+            set_servo_position(3, 2040);
+            msleep(200);
+            set_servo_position(3, 1500);
+            msleep(200);
+            set_servo_position(3, 2000);
+            msleep(200);
+            set_servo_position(3, 1600);
+            msleep(200);
+            set_servo_position(3, 2000);
+            msleep(100);
+        }
     }
-	
+
     set_servo_position(0, claw_close);
     msleep(200);
     set_servo_position(1, claw_up);
     msleep(200);
-    
+
     move(100, 800, change);
     move(-100, 100, change);
-    
+
+    move(-100, 205, change);
+    pick_up_poms;
+
+    move(100, 400, change);
+    msleep(500);
+    move(-100, 75, change);
+
     motor(0, -100);
     motor(1, 100);
-    msleep(920);
-    
+    msleep(900);//was 1300
+
     move(-100, 1200, change);
 
     disable_servos();
